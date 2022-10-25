@@ -10,41 +10,41 @@ import {
 	DocumentReference,
 	query,
 	getDocs,
-	deleteDoc
+	deleteDoc, Query, FieldPath, WhereFilterOp, where,
 } from '@firebase/firestore'
 import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
 import pluralize from 'pluralize'
+import HasRelationships from '@/entities/traits/HasRelationships'
+import AlcQuery from '@/entities/traits/AlcQuery'
 
-class FModel extends Model{
+class FModel extends Model {
+	query: Query
 	id: string = ''
 	tableName?: string
 	prefix: string = ''
-	db?: Firestore
+	db: Firestore
 	idPrefix: string = ''
 
-	constructor(data: IIndexable) {
+	constructor(data?: IIndexable) {
 		super()
 
 		if(window.alcPrefix) {
 			this.prefix = window.alcPrefix
 		}
 
-		if(window.alcDB) {
-			this.db = window.alcDB
-		}
+		this.db = window.alcDB
 
-		this.data = data
+		this.query = query(collection(this.db, this.table))
+
+		if(data) {
+			this.data = data
+		}
 	}
 
 	async save() {
 		const colRef = collection(this.db!, this.table)
-		let d: DocumentReference<DocumentData>
-		if(this.id) {
-			d = doc(colRef, this.id)
-		} else {
-			d = doc(colRef)
-		}
-		const id = `${this.idPrefix}${d.id}`
+		const d = doc(colRef)
+		const id = this.id || `${this.idPrefix}${d.id}`
 		const _doc = doc(colRef, id)
 		const data = {
 			...this.getPostable(),
@@ -55,14 +55,6 @@ class FModel extends Model{
 		return this
 	}
 
-	get table(): string {
-		let name = this.tableName
-		if(!name) {
-			name = pluralize(camelCase(this.constructor.name))
-		}
-		return `${this.prefix}${name}`
-	}
-
 	async truncate() {
 		const ref = collection(this.db!, this.table)
 		const q = query(ref)
@@ -71,6 +63,34 @@ class FModel extends Model{
 			deleteDoc(x.ref)
 		})
 	}
+
+	get table(): string {
+		let name = this.tableName
+		if(!name) {
+			name = pluralize(camelCase(this.constructor.name))
+		}
+		return `${this.prefix}${name}`
+	}
+
+	get hasRelationships() {
+		return (new HasRelationships(this))
+	}
+
+	static with<T extends FModel>(this: new (data?: IIndexable) => T, ...related: Array<string>) {
+
+	}
+
+	static query<T extends FModel>(this: new (data?: IIndexable) => T) {
+		const m = new this()
+		return new AlcQuery(this, query(m.query))
+	}
+
+	static where<T extends FModel>(this: new (data?: IIndexable) => T, fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown) {
+		const w = where(fieldPath, opStr, value)
+		const m = new this()
+		return new AlcQuery(this, query(m.query, w))
+	}
+
 }
 
 export default FModel

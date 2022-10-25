@@ -36,3 +36,14 @@ export function toInt(str: any) {
         .replace(/(?!^\-)[^\d\.]/g, '');
     return parseInt(str, 10);
 }
+
+const mixin = <T extends object, U extends object>(
+	object: T,
+	trait: U,
+): Mixin<T, U> =>
+	new Proxy(object, {
+		get: (target, key) => (trait as any)[key] ?? (target as any)[key],
+		has: (target, key) => key in trait || key in target,
+	}) as any
+
+type Mixin<T extends object, U extends object> = Omit<T, keyof U> & U
