@@ -12,11 +12,13 @@ import {
 	WhereFilterOp
 } from '@firebase/firestore'
 
+type RelatedType = 'hasMany' | 'belongsTo'
+
 export default class HasRelationships<T extends FModel> {
 	parent: FModel
 	query?: Query
 	relatedModel?: {new (data: IIndexable): T}
-	type: string = ''
+	type?: RelatedType
 
 	constructor(parent: FModel) {
 		this.parent = parent
