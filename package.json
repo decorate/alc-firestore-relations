@@ -1,0 +1,55 @@
+{
+  "name": "@team-decorate/alc-firestore-relations",
+  "version": "0.0.1",
+  "main": "dist/index.d.ts",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "./node_modules/.bin/tsc",
+    "mock:build": "axios-mock-server -b",
+    "mock:watch": "axios-mock-server -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/decorate/alc-firestore-relations.git"
+  },
+  "keywords": [
+    "ts",
+    "model",
+    "mapper"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@team-decorate/alcts": "^1.2.5",
+    "@types/pluralize": "^0.0.29",
+    "pluralize": "^8.0.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.5.0",
+    "@vue/cli-plugin-typescript": "^4.5.0",
+    "@vue/cli-service": "^4.5.0",
+    "axios": "^0.21.0",
+    "axios-mock-server": "^0.19.0",
+    "core-js": "^3.6.5",
+    "firebase": "^9.12.1",
+    "linq": "^3.2.3",
+    "typescript": "~3.9.3",
+    "vue": "^2.6.11",
+    "vue-class-component": "^7.2.3",
+    "vue-property-decorator": "^8.4.2",
+    "vue-router": "^3.2.0",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
