@@ -15,7 +15,8 @@ export default class AlcQuery<T extends FModel> {
 	}
 
 	with(related: Array<string>) {
-		this.withRelated = related
+		related.map(x => this.withRelated.push(x))
+		this.withRelated = [...new Set(this.withRelated)]
 		return this
 	}
 
@@ -37,10 +38,10 @@ export default class AlcQuery<T extends FModel> {
 				if(model[v] instanceof Function) {
 					const relation = await model[v]()
 					const res = await relation.get()
-					if(relation.type === 'hasMany') {
+					if(relation.type === 'hasMany' || relation.type === 'hasManySub') {
 						m.update({[relatedName]: res})
 					}
-					if(relation.type === 'belongsTo' && res.length) {
+					if((relation.type === 'belongsTo' || relation.type === 'hasOne') && res.length) {
 						m.update({[relatedName]: res[0]})
 					}
 				}

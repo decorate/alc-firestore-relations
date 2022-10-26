@@ -24,7 +24,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@team-decorate/alcts": "^1.2.5",
+    "@team-decorate/alcts": "^1.3.6",
     "@types/pluralize": "^0.0.29",
     "pluralize": "^8.0.0"
   },

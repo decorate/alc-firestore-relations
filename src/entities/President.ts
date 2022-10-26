@@ -1,24 +1,23 @@
 import { FModel } from '@/index'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
 
-export default class Review extends FModel {
-	tableName: string = 'reviews'
+export default class President extends FModel {
+	tableName: string = 'presidents'
 	id: string = ''
-	title: string = ''
-	body: string = ''
+	name: string = ''
 	restaurantId: string = ''
-	sort: number = 0
 
 	constructor(data?: IIndexable) {
 		super(data)
-		this.fillable = ['id', 'title', 'body', 'restaurantId', 'sort']
-		this.presents = ['sort']
+		this.fillable = ['id', 'name', 'restaurantId']
 
 		this.idPrefix = new Date().getTime().toString() + '_'
+
+		this.arrayMap(
+		)
 
 		if(data) {
 			this.data = data
 		}
 	}
-
 }

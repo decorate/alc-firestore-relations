@@ -1,6 +1,9 @@
 import {initializeApp} from 'firebase/app'
 import {
-	getFirestore
+	getFirestore,
+	doc,
+	setDoc,
+	connectFirestoreEmulator
 } from 'firebase/firestore'
 
 export class SetUpFirestore {
@@ -13,6 +16,8 @@ export class SetUpFirestore {
 			if(config.prefix) {
 				window.alcPrefix = config.prefix
 			}
+
+			connectFirestoreEmulator(window.alcDB, 'localhost', 9092)
 		}
 	}
 }

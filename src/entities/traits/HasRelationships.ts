@@ -9,10 +9,13 @@ import {
 	collection,
 	FieldPath,
 	QueryConstraint,
-	WhereFilterOp
+	WhereFilterOp,
+	orderBy, OrderByDirection,
 } from '@firebase/firestore'
+import pluralize from 'pluralize'
+import { camelToSnake, snakeToCamel } from '@/utility/stringUtility'
 
-type RelatedType = 'hasMany' | 'belongsTo'
+type RelatedType = 'hasMany' | 'belongsTo' | 'hasOne' | 'hasManySub'
 
 export default class HasRelationships<T extends FModel> {
 	parent: FModel
@@ -25,26 +28,54 @@ export default class HasRelationships<T extends FModel> {
 	}
 
 	hasMany(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
-		const model = new related({})
-		this.relatedModel = related
-		const colRef = collection(window.alcDB, model.table)
-		this.query = query(colRef, where(foreignKey!, '==', this.parent.id))
 		this.type = 'hasMany'
-		return this
-	}
-
-	belongsTo(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
+		const keys = this.getKeys(foreignKey, localKey)
 		const model = new related({})
 		this.relatedModel = related
 		const colRef = collection(window.alcDB, model.table)
 		const p = this.parent as IIndexable
-		this.query = query(colRef, where('id', '==', p[foreignKey!]))
+		this.query = query(colRef, where(keys.foreignKey!, '==', p[keys.localKey]))
+		return this
+	}
+
+	hasManySub(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
+		this.type = 'hasManySub'
+		const keys = this.getKeys(foreignKey, localKey)
+		this.relatedModel = related
+		const colRef = collection(window.alcDB, this.parent.table, this.parent.id, keys.foreignKey!)
+		this.query = query(colRef)
+		return this
+	}
+
+	belongsTo(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
 		this.type = 'belongsTo'
+		const model = new related({})
+		const keys = this.getKeys(foreignKey, localKey, model)
+		this.relatedModel = related
+		const colRef = collection(window.alcDB, model.table)
+		const p = this.parent as IIndexable
+		this.query = query(colRef, where(keys.localKey, '==', p[keys.foreignKey!]))
+		return this
+	}
+
+	hasOne(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
+		this.type = 'hasOne'
+		const model = new related({})
+		const keys = this.getKeys(foreignKey, localKey)
+		this.relatedModel = related
+		const colRef = collection(window.alcDB, model.table)
+		const p = this.parent as IIndexable
+		this.query = query(colRef, where(keys.foreignKey!, '==', p[keys.localKey]))
 		return this
 	}
 
 	where(fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown) {
 		this.query = query(this.query!, where(fieldPath, opStr, value))
+		return this
+	}
+
+	orderBy(fieldPath: string | FieldPath, directionStr?: OrderByDirection) {
+		this.query = query(this.query!, orderBy(fieldPath, directionStr))
 		return this
 	}
 
@@ -55,5 +86,26 @@ export default class HasRelationships<T extends FModel> {
 			data.push(new this.relatedModel!(x.data() as IIndexable))
 		})
 		return data
+	}
+
+	getKeys(foreignKey?: string, localKey?: string, model?: FModel) {
+		if(!foreignKey) {
+			if(this.type === 'belongsTo') {
+				foreignKey = snakeToCamel(pluralize(model!.tableName || model!.constructor.name, 1)) + 'Id'
+			} else {
+				foreignKey = camelToSnake(pluralize(this.parent.tableName || this.parent.constructor.name, 1)) + '_id'
+			}
+		} else {
+			if(this.type === 'belongsTo') {
+				foreignKey = snakeToCamel(foreignKey) || foreignKey
+			}
+		}
+		if(!localKey) {
+			localKey = 'id'
+		}
+		return {
+			foreignKey,
+			localKey
+		}
 	}
 }

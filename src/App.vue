@@ -23,16 +23,17 @@
   export default class App extends Vue {
 
     async created() {
+      //Restaurant.seed()
       const a = await Restaurant
         .query()
-        .with(['_reviews', '_detail'])
+        .with(['_sub_detail', '_reviews'])
+        .with(['_detail'])
+        .with(['_president'])
         .where('category_id', '==', 1)
-        //.where('name', '==', '日高屋')
         .get()
       // const d = await a[0]._reviews().where('title', '==', 'おいしい2').get()
       // const b = await a[0]._detail().get()
-      a.map(x => console.log(x.getPostable()))
-      // const r = new Restaurant({name: 'ジョナサン', categoryId: 2})
+      a.map(x => console.log(x))
       //r.save()
       // const reviews = (await r.reviews())
       // const d = await reviews.get()
