@@ -1,7 +1,7 @@
 import { FieldPath, Query, WhereFilterOp, where, query, getDocs } from '@firebase/firestore'
 import FModel from '@/FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
-import { Model } from '@team-decorate/alcts/dist/index'
+import HasRelationships from '@/entities/traits/HasRelationships'
 
 export default class AlcQuery<T extends FModel> {
 	query: Query
@@ -33,7 +33,7 @@ export default class AlcQuery<T extends FModel> {
 		await Promise.all(d.docs.map(async x => {
 			let m = new this.model(x.data())
 			await Promise.all(this.withRelated.map(async v => {
-				const relatedName = v.replace('_', '')
+				const relatedName = v.replace(/\_/g, '')
 				const model = m as IIndexable
 				if(model[v] instanceof Function) {
 					const relation = await model[v]()
@@ -45,9 +45,78 @@ export default class AlcQuery<T extends FModel> {
 						m.update({[relatedName]: res[0]})
 					}
 				}
+
+				await this.setHasManySub(m, [m], relatedName)
+				await this.setRelations(m, [m], relatedName)
+
 			}))
 			data.push(m)
 		}))
 		return data
 	}
+
+	async setHasManySub(parentModel: T, rootModel: T[], relatedName: string, count: number = 0, path = '', targetKey:string = '') {
+		await Promise.all(
+			rootModel.map(async (x, i) => {
+				const model = x as IIndexable
+				const func = relatedName.split('.')
+				let key = ''
+				if(count && func[count]) {
+					key = `${targetKey}.${i}.${func[count]}`
+				} else {
+					key = `${func[count]}`
+				}
+				const f = `_${func[count]}`
+				if(model[f] == undefined) return
+				const relation = model[f]()
+				if(relation.type != 'hasManySub') {
+					return
+				}
+				let nextPath = ''
+				if(path) {
+					nextPath = `${path}/${relation.subPath}`
+					relation.setQuery(nextPath)
+				}
+				if(!path) {
+					nextPath = relation.subPath
+				}
+				const res = await relation.get()
+				if(res.length) {
+					const s = func.slice()
+					s.splice(count+1)
+					parentModel.setValueByKey(key, res)
+					await this.setHasManySub(parentModel, res, relatedName, count + 1, nextPath, key)
+				}
+			})
+		)
+	}
+
+	async setRelations(parentModel: T, rootModel: T[], relatedName: string, count: number = 0, targetKey:string = '') {
+		await Promise.all(
+			rootModel.map(async (x, i) => {
+				const model = x as IIndexable
+				const func = relatedName.split('.')
+				let key = ''
+				if(count && func[count]) {
+					key = `${targetKey}.${i}.${func[count]}`
+				} else {
+					key = `${func[count]}`
+				}
+				const f = `_${func[count]}`
+				if(model[f] == undefined) return
+				const relation = model[f]()
+				if(relation.type == 'hasManySub') {
+					return
+				}
+				const res = await relation.get()
+				if(res.length) {
+					const s = func.slice()
+					s.splice(count+1)
+					parentModel.setValueByKey(key, res)
+					await this.setRelations(parentModel, res, relatedName, count + 1, key)
+				}
+			})
+		)
+	}
+
 }

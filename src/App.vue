@@ -12,6 +12,7 @@
   import Restaurant from './entities/Restaurant'
   import Review from '@/entities/Review'
   import RestaurantDetail from '@/entities/RestaurantDetail'
+  import { collection, getDocs } from '@firebase/firestore'
 
     mock()
 
@@ -26,10 +27,11 @@
       //Restaurant.seed()
       const a = await Restaurant
         .query()
-        .with(['_sub_detail', '_reviews'])
+        .with(['_addresses._pref._tests._infos'])
+        .with(['_reviews'])
         .with(['_detail'])
-        .with(['_president'])
-        .where('category_id', '==', 1)
+        .with(['_president._detail'])
+        .where('name', '==', 'ジョナサン')
         .get()
       // const d = await a[0]._reviews().where('title', '==', 'おいしい2').get()
       // const b = await a[0]._detail().get()

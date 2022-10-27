@@ -22,9 +22,16 @@ export default class HasRelationships<T extends FModel> {
 	query?: Query
 	relatedModel?: {new (data: IIndexable): T}
 	type?: RelatedType
+	subPath?: string
 
 	constructor(parent: FModel) {
 		this.parent = parent
+	}
+
+	setQuery(path:string) {
+		const colRef = collection(window.alcDB, path)
+		this.query = query(colRef)
+		return this
 	}
 
 	hasMany(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
@@ -42,8 +49,15 @@ export default class HasRelationships<T extends FModel> {
 		this.type = 'hasManySub'
 		const keys = this.getKeys(foreignKey, localKey)
 		this.relatedModel = related
-		const colRef = collection(window.alcDB, this.parent.table, this.parent.id, keys.foreignKey!)
-		this.query = query(colRef)
+		let path = `${this.parent.table}/${this.parent.id}/${keys.foreignKey!}`
+		if(/\//.test(keys.foreignKey!)) {
+			path = keys.foreignKey!
+		}
+		this.subPath = path
+		try {
+			const colRef = collection(window.alcDB, path)
+			this.query = query(colRef)
+		} catch(e) {}
 		return this
 	}
 

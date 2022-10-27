@@ -5,6 +5,7 @@ import HasRelationships from '@/entities/traits/HasRelationships'
 import { ArrayMappable } from '@team-decorate/alcts/dist/index'
 import RestaurantDetail from '@/entities/RestaurantDetail'
 import President from '@/entities/President'
+import Address from '@/entities/Address'
 
 export default class Restaurant extends FModel {
 	tableName: string = 'restaurants'
@@ -14,19 +15,19 @@ export default class Restaurant extends FModel {
 	detailId: string = ''
 	reviews?: Review[] = []
 	detail?: RestaurantDetail = new RestaurantDetail()
-	subDetail?: RestaurantDetail[] = []
 	president?: President = new President()
+	addresses?: Address[] = []
 
 	constructor(data?: IIndexable) {
 		super(data)
-		this.fillable = ['id', 'name', 'categoryId', 'reviews', 'detailId', 'detail', 'president']
+		this.fillable = ['id', 'name', 'categoryId', 'reviews', 'detailId', 'detail', 'president', 'addresses']
 		this.sender = ['id', 'name', 'categoryId', 'detailId']
 
 		this.idPrefix = new Date().getTime().toString() + '_'
 
 		this.arrayMap(
 			new ArrayMappable(Review).bind('reviews'),
-			new ArrayMappable(RestaurantDetail).bind('subDetail')
+			new ArrayMappable(Address).bind('addresses')
 		)
 
 		if(data) {
@@ -43,13 +44,21 @@ export default class Restaurant extends FModel {
 		return this.hasRelationships.belongsTo(RestaurantDetail, 'detail_id')
 	}
 
-	_sub_detail() {
-		return this.hasRelationships.hasManySub(RestaurantDetail, 'sub_detail')
-			.where('email', '!=', 'sub@mail.com')
+	_addresses() {
+		return this.hasRelationships.hasManySub(Address, 'addresses')
 	}
 
 	_president() {
 		return this.hasRelationships.hasOne(President)
+	}
+
+	static async test() {
+		[
+			{tel: '0311112222', email: 'test1@mail.com', name: 'ジョナサン', categoryId: 1},
+		].map(async x => {
+			const res = await new Restaurant({...x}).saveSub([
+			])
+		})
 	}
 
 	static async seed() {
@@ -57,6 +66,7 @@ export default class Restaurant extends FModel {
 		await RestaurantDetail.truncate();
 		await Review.truncate();
 		await President.truncate();
+		await Address.truncate();
 		[
 			{tel: '0311112222', email: 'test1@mail.com', name: 'ジョナサン', categoryId: 1},
 			{tel: '0322223333', email: 'test2@mail.com', name: 'ガスト', categoryId: 1},
@@ -67,7 +77,10 @@ export default class Restaurant extends FModel {
 		]
 		.map(async x => {
 			const r = await new RestaurantDetail(x).save()
-			const res = await new Restaurant({...x, detailId: r.id}).save()
+			const res = await new Restaurant({...x, detailId: r.id}).saveSub([
+				new Address({address: '錦糸町'}),
+				new Address({address: '新小岩'})
+			])
 			new President({
 				name: `${x.name}社長`,
 				restaurantId: res.id

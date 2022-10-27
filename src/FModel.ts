@@ -16,6 +16,7 @@ import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
 import pluralize from 'pluralize'
 import HasRelationships from '@/entities/traits/HasRelationships'
 import AlcQuery from '@/entities/traits/AlcQuery'
+import {setValueByKey, getValueByKey} from '@/utility/objectUtility'
 
 class FModel extends Model {
 	query: Query
@@ -27,8 +28,14 @@ class FModel extends Model {
 
 	_sender: string[] = []
 
+	getValueByKey: (key: string) => {}
+	setValueByKey: <T extends FModel>(key: string, value: any, model?: T) => void
+
 	constructor(data?: IIndexable) {
 		super()
+
+		this.getValueByKey = getValueByKey.bind(this)
+		this.setValueByKey = setValueByKey.bind(this)
 
 		if(window.alcPrefix) {
 			this.prefix = window.alcPrefix
@@ -54,6 +61,24 @@ class FModel extends Model {
 		}
 		this.id = id
 		await setDoc(_doc, data)
+		return this
+	}
+
+	async saveSub<T extends FModel>(data: T[]) {
+		const res = await this.save()
+		await Promise.all(data.map(async x => {
+			const tableName = x.tableName || pluralize(x.constructor.name)
+			const colRef = collection(this.db!, res.table, res.id, tableName)
+			const d = doc(colRef)
+			const id = x.id || `${x.idPrefix}${d.id}`
+
+			const _doc = doc(colRef, id)
+			const data = {
+				...x.getPostable(),
+				id: id
+			}
+			await setDoc(_doc, data)
+		}))
 		return this
 	}
 
