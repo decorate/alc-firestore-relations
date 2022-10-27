@@ -94,10 +94,6 @@ class FModel extends Model {
 		return (new HasRelationships(this))
 	}
 
-	static with<T extends FModel>(this: new (data?: IIndexable) => T, ...related: Array<string>) {
-
-	}
-
 	static query<T extends FModel>(this: new (data?: IIndexable) => T) {
 		const m = new this()
 		return new AlcQuery(this, query(m.query))

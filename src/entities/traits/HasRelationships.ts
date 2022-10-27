@@ -34,6 +34,17 @@ export default class HasRelationships<T extends FModel> {
 		return this
 	}
 
+	addQuery(_query: QueryConstraint|QueryConstraint[]) {
+		if(Array.isArray(_query)) {
+			_query.map(x => {
+				this.query = query(this.query!, x)
+			})
+		} else {
+			this.query = query(this.query!, _query)
+		}
+		return this
+	}
+
 	hasMany(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
 		this.type = 'hasMany'
 		const keys = this.getKeys(foreignKey, localKey)
@@ -45,9 +56,9 @@ export default class HasRelationships<T extends FModel> {
 		return this
 	}
 
-	hasManySub(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
+	hasManySub(related: {new (data: IIndexable): T}, foreignKey?: string) {
 		this.type = 'hasManySub'
-		const keys = this.getKeys(foreignKey, localKey)
+		const keys = this.getKeys(foreignKey)
 		this.relatedModel = related
 		let path = `${this.parent.table}/${this.parent.id}/${keys.foreignKey!}`
 		if(/\//.test(keys.foreignKey!)) {

@@ -37,7 +37,6 @@ export default class Restaurant extends FModel {
 
 	_reviews() {
 		return this.hasRelationships.hasMany(Review)
-		.orderBy('sort', 'desc')
 	}
 
 	_detail() {
