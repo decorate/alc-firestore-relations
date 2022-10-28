@@ -8,20 +8,36 @@ import {
 	limit,
 	orderBy,
 	OrderByDirection,
+	QuerySnapshot, QueryConstraint,
+	QueryDocumentSnapshot
 } from '@firebase/firestore'
 import FModel from '@/FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
 import HasRelationships from '@/entities/traits/HasRelationships'
+import SimplePaginate from '@/entities/traits/SimplePaginate'
+import firebase from 'firebase/compat'
+import { IPaginate } from '@/interfaces/IPaginate'
 
 export default class AlcQuery<T extends FModel> {
-	query: Query
+	#query: Query
 	model: new (data?: IIndexable) => T
 	withRelated: Array<string|{key: string, query: any}>
+	snapShot?: QueryDocumentSnapshot
+	paginator?: IPaginate<T>
 
 	constructor(model: new (data?: IIndexable) => T, query: Query) {
-		this.query = query
+		this.#query = query
 		this.model = model
 		this.withRelated = []
+	}
+
+	query() {
+		return this
+	}
+
+	addQuery(_query: QueryConstraint) {
+		this.#query = query(this.#query, _query)
+		return this
 	}
 
 	with(related: Array<string|{key: string, query: any}>) {
@@ -32,24 +48,27 @@ export default class AlcQuery<T extends FModel> {
 
 	where(fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown) {
 		const w = where(fieldPath, opStr, value)
-		this.query = query(this.query, w)
+		this.#query = query(this.#query, w)
 		return this
 	}
 
 	limit(num: number) {
 		const l = limit(num)
-		this.query = query(this.query, l)
+		this.#query = query(this.#query, l)
 		return this
 	}
 
 	orderBy(fieldPath: string | FieldPath, directionStr?: OrderByDirection) {
 		const o = orderBy(fieldPath, directionStr)
-		this.query = query(this.query, o)
+		this.#query = query(this.#query, o)
 		return this
 	}
 
 	async get() {
-		const d = await getDocs(this.query)
+		const d = await getDocs(this.#query)
+		if(d.docs.length) {
+			this.snapShot = d.docs[d.docs.length-1]
+		}
 		const data: T[] = []
 
 		await Promise.all(d.docs.map(async x => {
@@ -166,6 +185,15 @@ export default class AlcQuery<T extends FModel> {
 				}
 			})
 		)
+	}
+
+	createPaginator() {
+		this.paginator = new SimplePaginate(this)
+	}
+
+	simplePaginate(limit: number) {
+		this.paginator?.setLimit(limit)
+		return this.paginator
 	}
 
 }

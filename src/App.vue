@@ -1,11 +1,11 @@
 <template>
     <div id="app">
-        <img alt="Vue logo" src="./assets/logo.png">
-        <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+      <home/>
     </div>
 </template>
 
 <script lang="ts">
+import 'bootstrap/dist/css/bootstrap.css'
 	import { Component, Vue } from 'vue-property-decorator';
 	import HelloWorld from './components/HelloWorld.vue';
   import mock from '../mocks/$mock'
@@ -13,34 +13,19 @@
   import Review from '@/entities/Review'
   import RestaurantDetail from '@/entities/RestaurantDetail'
   import { collection, getDocs, collectionGroup, query, where, orderBy } from '@firebase/firestore'
+  import Home from '@/views/Home.vue'
 
     mock()
 
 	@Component({
 		components: {
+      Home,
 			HelloWorld,
 		},
 	})
   export default class App extends Vue {
 
     async created() {
-      const a = await Restaurant
-        .query()
-        .with(['_addresses._pref._tests._infos'])
-        // .with(['_reviews'])
-        // .with(['_detail'])
-        .with([{key: '_addresses', query: () => {
-            return [
-                orderBy('address', 'desc'),
-                where('address', 'in', ['錦糸町', '亀戸'])
-            ]
-          }}])
-      // .with(['_president._detail'])
-        .where('name', 'in', ['ジョナサン', 'ガスト'])
-        .orderBy('name', 'desc')
-        //.limit(2)
-        .get()
-      a.map(x => console.log(x))
     }
 
   }

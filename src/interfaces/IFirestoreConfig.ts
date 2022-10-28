@@ -1,5 +1,5 @@
 
-interface IFirestoreConfig {
+export interface IFirestoreConfig {
 	apiKey: string,
 	authDomain: string,
 	databaseURL?: string,

@@ -17,6 +17,7 @@ import pluralize from 'pluralize'
 import HasRelationships from '@/entities/traits/HasRelationships'
 import AlcQuery from '@/entities/traits/AlcQuery'
 import {setValueByKey, getValueByKey} from '@/utility/objectUtility'
+import SimplePaginate from '@/entities/traits/SimplePaginate'
 
 class FModel extends Model {
 	query: Query
@@ -153,6 +154,13 @@ class FModel extends Model {
 		this.afterPostable(v)
 
 		return v
+	}
+
+	static paginate<T extends FModel>(this: new (data?: IIndexable) => T) {
+		const m = new this()
+		const q = new AlcQuery(this, query(m.query))
+		q.createPaginator()
+		return q
 	}
 }
 
