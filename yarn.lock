@@ -1349,8 +1349,8 @@
   resolved "https://registry.yarnpkg.com/@soda/get-current-script/-/get-current-script-1.0.2.tgz#a53515db25d8038374381b73af20bb4f2e508d87"
 
 "@team-decorate/alcts@^1.3.6":
-  version "1.3.6"
-  resolved "https://registry.yarnpkg.com/@team-decorate/alcts/-/alcts-1.3.6.tgz#18f069565465b4c9bb29b54de7832f89e592957c"
+  version "1.3.7"
+  resolved "https://registry.yarnpkg.com/@team-decorate/alcts/-/alcts-1.3.7.tgz#17f3c4c673dfebdde7c613bc9b5aacb46f8e0eaa"
   dependencies:
     "@types/pluralize" "^0.0.29"
     pluralize "^8.0.0"

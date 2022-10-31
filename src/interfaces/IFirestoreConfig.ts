@@ -8,5 +8,6 @@ export interface IFirestoreConfig {
 	messagingSenderId: string,
 	appId: string,
 	measurementId?: string,
-	prefix?: string
+	prefix?: string,
+	test?: boolean
 }

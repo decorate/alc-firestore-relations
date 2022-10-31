@@ -12,6 +12,7 @@ export default class Address extends FModel {
 	constructor(data?: IIndexable) {
 		super(data)
 		this.fillable = ['id', 'address', 'pref']
+		this.sender = ['id', 'address']
 
 		this.idPrefix = new Date().getTime().toString() + '_'
 

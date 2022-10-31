@@ -14,6 +14,7 @@ import {
 } from '@firebase/firestore'
 import pluralize from 'pluralize'
 import { camelToSnake, snakeToCamel } from '@/utility/stringUtility'
+import { doc, setDoc } from 'firebase/firestore'
 
 type RelatedType = 'hasMany' | 'belongsTo' | 'hasOne' | 'hasManySub'
 
@@ -23,6 +24,7 @@ export default class HasRelationships<T extends FModel> {
 	relatedModel?: {new (data: IIndexable): T}
 	type?: RelatedType
 	subPath?: string
+	private keys?: any
 
 	constructor(parent: FModel) {
 		this.parent = parent
@@ -76,6 +78,7 @@ export default class HasRelationships<T extends FModel> {
 		this.type = 'belongsTo'
 		const model = new related({})
 		const keys = this.getKeys(foreignKey, localKey, model)
+		this.keys = keys
 		this.relatedModel = related
 		const colRef = collection(window.alcDB, model.table)
 		const p = this.parent as IIndexable
@@ -132,5 +135,93 @@ export default class HasRelationships<T extends FModel> {
 			foreignKey,
 			localKey
 		}
+	}
+
+	async save(data: T|T[]) {
+		switch(this.type) {
+			case 'hasMany':
+				await this.hasManySave(data)
+				break
+			case 'hasManySub':
+				await this.hasManySubSave(data)
+				break
+			case 'belongsTo':
+				await this.belongsToSave(data as T)
+				break
+		}
+	}
+
+	async belongsToSave(data: T) {
+		const p = this.parent as IIndexable
+		if(p[this.keys.foreignKey!]) {
+			data.update({[this.keys.localKey]: p[this.keys.foreignKey!]})
+		}
+		const res = await data.save()
+		this.parent.update({[this.keys.foreignKey!]: res.id})
+		await this.parent.save()
+	}
+
+	async hasManySave(data: T|T[]) {
+		const keys = this.getKeys()
+		if(Array.isArray(data)) {
+			await Promise.all(data.map(async x => {
+				x.update({[keys.foreignKey!]: this.parent.id})
+				await x.save()
+				return x
+			}))
+			return
+		}
+
+		data.update({[keys.foreignKey!]: this.parent.id})
+		await data.save()
+	}
+
+	async hasManySubSave(data: T|T[]) {
+		if(Array.isArray(data)) {
+			data.map(async x => {
+				const col = collection(window.alcDB, this.subPath!)
+				const d = doc(col)
+				x.update({id: d.id})
+				await setDoc(d, x.getPostable())
+				await Promise.all(x.arrayMapTarget.map(async v => {
+					const m = x as IIndexable
+					if(m[`_${v.bindKey}`]) {
+						if(m[v.bindKey].length) {
+							this.setRelations(this.subPath!, m, v.bindKey)
+						}
+					}
+				}))
+			})
+			return
+		}
+		const col = collection(window.alcDB, this.subPath!)
+		const d = doc(col)
+		data.update({id: d.id})
+		await setDoc(d, data.getPostable())
+		await Promise.all(data.arrayMapTarget.map(async x => {
+			const d = data as IIndexable
+			if(d[`_${x.bindKey}`]) {
+				if(d[x.bindKey].length) {
+					this.setRelations(this.subPath!, d, x.bindKey)
+				}
+			}
+		}))
+	}
+
+	private async setRelations(_path = '', source: IIndexable, bindKey: string) {
+		const relation = source[`_${bindKey}`]()
+		if(!relation) {
+			return
+		}
+		const path = `${_path}/${relation.subPath!}`
+		relation.setQuery(path)
+		relation.subPath = path
+		await relation.save(source[bindKey])
+		source[bindKey].map((v: T) => {
+			v.arrayMapTarget.map(k => {
+				const s = v as IIndexable
+				this.setRelations(`${path}`, s, k.bindKey)
+			})
+		})
 	}
 }

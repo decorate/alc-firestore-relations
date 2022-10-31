@@ -5,6 +5,7 @@ import {
 	setDoc,
 	connectFirestoreEmulator
 } from 'firebase/firestore'
+import {IFirestoreConfig} from '@/interfaces/IFirestoreConfig'
 
 export class SetUpFirestore {
 
@@ -17,7 +18,9 @@ export class SetUpFirestore {
 				window.alcPrefix = config.prefix
 			}
 
-			connectFirestoreEmulator(window.alcDB, 'localhost', 9092)
+			if(config?.test) {
+				connectFirestoreEmulator(window.alcDB, 'localhost', 9092)
+			}
 		}
 	}
 }
