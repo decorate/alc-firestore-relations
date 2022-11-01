@@ -23,13 +23,16 @@
 // @ is an alias to /src
 import {IPaginate} from '@/interfaces/IPaginate'
 import Restaurant from '@/entities/Restaurant'
-import {orderBy, where} from '@firebase/firestore'
+import {collection, collectionGroup, getDocs, limit, orderBy, query, where} from '@firebase/firestore'
 import Review from '@/entities/Review'
 import Address from '@/entities/Address'
 import Pref from '@/entities/Pref'
 import Test from '@/entities/Test'
 import Info from '@/entities/Info'
 import RestaurantDetail from '@/entities/RestaurantDetail'
+import President from '@/entities/President'
+import PresidentDetail from '@/entities/PresidentDetail'
+import FModel from '@/FModel'
 
 export default {
   name: 'Home',
@@ -41,29 +44,34 @@ export default {
   },
 
   async created() {
+    //await Restaurant.seed(20)
     this.test1()
     //this.test2()
     //this.test3()
     //this.test4()
+    //this.test5()
+    //this.test6()
+    //this.test7()
 
   },
 
   methods: {
     async test1() {
       await this.restaurants
-          .with(['_addresses._pref._tests._infos'])
-          .with(['_reviews'])
-          .with(['_detail'])
-          .with([{key: '_addresses', query: () => {
-              return [
-                orderBy('address', 'desc'),
-              ]
-            }}])
-          .where('id', '==', '1666851262059_IvhuTBs9Y5hZJmsNcd5O')
-          .with(['_president._detail'])
-          .orderBy('id', 'desc')
+          .with(['_addresses._pref'])
+          //.with(['_addresses._pref._tests._infos'])
+          // .with(['_reviews'])
+          // .with(['_detail'])
+          // .with([{key: '_addresses', query: () => {
+          //     return [
+          //       orderBy('address', 'desc'),
+          //     ]
+          //   }}])
+          //.where('id', '==', '1666851262059_IvhuTBs9Y5hZJmsNcd5O')
+          // .with(['_president._detail'])
+          // .orderBy('id', 'desc')
       //.limit(1)
-      //.simplePaginate(1)
+      .simplePaginate(1)
 
       this.next()
     },
@@ -117,7 +125,64 @@ export default {
         tel: '08011112222',
         email: 'beTest2@mail.com'
       }))
+    },
+
+    // rootSave
+    async test5() {
+      const r = new Restaurant({
+        name: 'マクドナルド',
+        categoryId: 2,
+        addresses: [
+            new Address({
+              address: '飯田橋',
+              pref: [
+                new Pref({text: '新潟'}),
+                new Pref({text: '沖縄'}),
+              ]
+            })
+        ],
+        detail: new RestaurantDetail({email: 'mac@mail.com', tel: '0312123333'}),
+        reviews: [
+          new Review({title: 'マックレビュー1', body: 'マックレビュー1 body'}),
+          //new Review({title: 'マックレビュー2', body: 'マックレビュー2 body'}),
+        ],
+        // president: new President({
+        //   name: 'マック社長',
+        //   detail: new PresidentDetail({
+        //     tel: '09012345678'
+        //   })
+        // })
+      })
+
+      r.save()
+    },
+
+    // hasOneSave
+    async test6() {
+      const r = await Restaurant.query().find('1666851262059_IvhuTBs9Y5hZJmsNcd5O')
+      r._president().save(new President({
+        name: 'test4社長',
+        detail: new PresidentDetail({
+          tel: '08019192828'
+        })
+      }))
+    },
+
+    async test7() {
+      const r = await Restaurant.query().first()
+      const a = await r._addresses().get()
+      a.map(async x => {
+        const p = await x._pref().limit(1).get()
+        p.map(async v => {
+          const t = await v._tests().limit(1).get()
+          t.map(async k => {
+            const i = await k._infos().get()
+            console.log(i)
+          })
+        })
+      })
     }
+
   },
 
   components: {

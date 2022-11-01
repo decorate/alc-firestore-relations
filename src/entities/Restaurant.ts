@@ -6,6 +6,11 @@ import { ArrayMappable } from '@team-decorate/alcts/dist/index'
 import RestaurantDetail from '@/entities/RestaurantDetail'
 import President from '@/entities/President'
 import Address from '@/entities/Address'
+import {faker} from '@faker-js/faker'
+import PresidentDetail from '@/entities/PresidentDetail'
+import Pref from '@/entities/Pref'
+import Test from '@/entities/Test'
+import Info from '@/entities/Info'
 
 export default class Restaurant extends FModel {
 	tableName: string = 'restaurants'
@@ -60,38 +65,60 @@ export default class Restaurant extends FModel {
 		})
 	}
 
-	static async seed() {
-		await Restaurant.truncate();
-		await RestaurantDetail.truncate();
-		await Review.truncate();
-		await President.truncate();
-		await Address.truncate();
-		[
-			{tel: '0311112222', email: 'test1@mail.com', name: 'ジョナサン', categoryId: 1},
-			{tel: '0322223333', email: 'test2@mail.com', name: 'ガスト', categoryId: 1},
-			{tel: '0343432322', email: 'test3@mail.com', name: 'デニーズ', categoryId: 1},
-			{tel: '0319393939', email: 'test4@mail.com', name: '吉野家', categoryId: 2},
-			{tel: '0338948210', email: 'test5@mail.com', name: 'すき家', categoryId: 2},
-			{tel: '0348849100', email: 'test6@mail.com', name: '松屋', categoryId: 2},
-		]
-		.map(async x => {
-			const r = await new RestaurantDetail(x).save()
-			const res = await new Restaurant({...x, detailId: r.id}).saveSub([
-				new Address({address: '錦糸町'}),
-				new Address({address: '新小岩'})
-			])
-			new President({
-				name: `${x.name}社長`,
-				restaurantId: res.id
-			}).save()
-			Array.from(Array(10)).map((v,i) => {
-				new Review({
-					title: `${x.name}おいしい_${i}`,
-					body: `${x.name}おいしかった_${i}`,
-					restaurantId: res.id,
-					sort: i
+	static async seed(num = 1) {
+		await Promise.all(Array.from(Array(num))
+			.map(async (x, i) => {
+
+				const reviews = this.randomArr(11).map((v, k) => {
+					return new Review({
+						title: faker.random.word(),
+						body: faker.random.words()
+					})
+				})
+
+				const addresses = this.randomArr(5).map(x => {
+					const pref = this.randomArr(5).map(v => {
+						const infos = this.randomArr(3).map(k => {
+							return new Info({
+								body: faker.random.words()
+							})
+						})
+						const tests = this.randomArr(3).map(k => {
+							return new Test({
+								text: faker.random.word(),
+								infos
+							})
+						})
+						return new Pref({
+							text: faker.address.state(),
+							tests
+						})
+					})
+					return new Address({
+						address: faker.address.cityName(),
+						pref
+					})
+				})
+
+				await new Restaurant({
+					name: faker.company.name(),
+					detail: new RestaurantDetail({
+						tel: faker.phone.number(),
+						email: faker.internet.email()
+					}),
+					president: new President({
+						name: faker.name.fullName(),
+						detail: new PresidentDetail({
+							tel: faker.phone.number(),
+						})
+					}),
+					reviews: reviews,
+					addresses: addresses
 				}).save()
-			})
-		});
+			}))
+	}
+
+	static randomArr(max :number) {
+		return [...Array(Math.floor(Math.random() * max) + 1)]
 	}
 }

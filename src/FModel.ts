@@ -26,6 +26,7 @@ class FModel extends Model {
 	prefix: string = ''
 	db: Firestore
 	idPrefix: string = ''
+	parent?: FModel
 
 	_sender: string[] = []
 
@@ -51,7 +52,7 @@ class FModel extends Model {
 		}
 	}
 
-	async save() {
+	async save(fireRelation = true) {
 		const colRef = collection(this.db!, this.table)
 		const d = doc(colRef)
 		const id = this.id || `${this.idPrefix}${d.id}`
@@ -62,6 +63,40 @@ class FModel extends Model {
 		}
 		this.id = id
 		await setDoc(_doc, data)
+
+		if(!fireRelation) {
+			return this
+		}
+
+		await Promise.all(this.arrayMapTarget
+		.filter(x => {
+			const model = this as IIndexable
+			return model[x.bindKey].length
+		})
+		.map(async x => {
+			const model = this as IIndexable
+			if(model['_' + x.bindKey]) {
+				await model['_' + x.bindKey]().save(model[x.bindKey])
+			}
+		}))
+
+
+		await Promise.all(Object.entries(this)
+		.filter(x => {
+			const model = this as IIndexable
+			return (model[x[0]] instanceof FModel)
+		})
+		.filter(x => {
+			const model = this as IIndexable
+			return Object.keys(model[x[0]].getPostable()).length
+		})
+		.map(async x => {
+			const model = this as IIndexable
+			if(model['_' + x[0]]) {
+				await model['_' + x[0]]().save(model[x[0]])
+			}
+		}))
+
 		return this
 	}
 
@@ -161,6 +196,10 @@ class FModel extends Model {
 		const q = new AlcQuery(this, query(m.query))
 		q.createPaginator()
 		return q
+	}
+
+	setParent(model: FModel) {
+		this.parent = model
 	}
 }
 

@@ -25,6 +25,6 @@ export default class Test extends FModel {
 	}
 
 	_infos() {
-		return this.hasRelationships.hasManySub(Info, `${this.id}/infos`)
+		return this.hasRelationships.hasManySub(Info, `infos`)
 	}
 }

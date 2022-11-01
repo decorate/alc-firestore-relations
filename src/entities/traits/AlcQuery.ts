@@ -58,6 +58,15 @@ export default class AlcQuery<T extends FModel> {
 		return new this.model(res.data())
 	}
 
+	async first() {
+		const col = collection(window.alcDB, new this.model().table)
+		const q = query(col, limit(1))
+		const res = await getDocs(q)
+		if(res.docs.length) {
+			return new this.model(res.docs[0].data())
+		}
+	}
+
 	where(fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown) {
 		const w = where(fieldPath, opStr, value)
 		this.#query = query(this.#query, w)

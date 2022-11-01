@@ -839,6 +839,10 @@
     "@babel/helper-validator-identifier" "^7.19.1"
     to-fast-properties "^2.0.0"
 
+"@faker-js/faker@^7.6.0":
+  version "7.6.0"
+  resolved "https://registry.yarnpkg.com/@faker-js/faker/-/faker-7.6.0.tgz#9ea331766084288634a9247fcd8b84f16ff4ba07"
+
 "@firebase/analytics-compat@0.1.16":
   version "0.1.16"
   resolved "https://registry.yarnpkg.com/@firebase/analytics-compat/-/analytics-compat-0.1.16.tgz#7a2c57c37a39efe52c476fa8878dd5a6b93b2155"

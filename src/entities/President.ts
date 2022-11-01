@@ -12,7 +12,8 @@ export default class President extends FModel {
 
 	constructor(data?: IIndexable) {
 		super(data)
-		this.fillable = ['id', 'name', 'restaurantId']
+		this.fillable = ['id', 'name', 'restaurantId', 'detail', 'detailId']
+		this.sender = ['id', 'name', 'restaurantId', 'detailId']
 
 		this.idPrefix = new Date().getTime().toString() + '_'
 

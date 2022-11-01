@@ -4,13 +4,14 @@ import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
 import {
 	query,
 	getDocs,
+	updateDoc,
 	where,
 	Query,
 	collection,
 	FieldPath,
 	QueryConstraint,
 	WhereFilterOp,
-	orderBy, OrderByDirection,
+	orderBy, OrderByDirection, limit,
 } from '@firebase/firestore'
 import pluralize from 'pluralize'
 import { camelToSnake, snakeToCamel } from '@/utility/stringUtility'
@@ -50,6 +51,7 @@ export default class HasRelationships<T extends FModel> {
 	hasMany(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
 		this.type = 'hasMany'
 		const keys = this.getKeys(foreignKey, localKey)
+		this.keys = keys
 		const model = new related({})
 		this.relatedModel = related
 		const colRef = collection(window.alcDB, model.table)
@@ -58,11 +60,13 @@ export default class HasRelationships<T extends FModel> {
 		return this
 	}
 
-	hasManySub(related: {new (data: IIndexable): T}, foreignKey?: string) {
+	hasManySub(related: new (data?: IIndexable) => T, foreignKey?: string) {
+		const p = this.getPath(this.parent)
 		this.type = 'hasManySub'
 		const keys = this.getKeys(foreignKey)
+		this.keys = keys
 		this.relatedModel = related
-		let path = `${this.parent.table}/${this.parent.id}/${keys.foreignKey!}`
+		let path = `${p}/${keys.foreignKey!}`
 		if(/\//.test(keys.foreignKey!)) {
 			path = keys.foreignKey!
 		}
@@ -72,6 +76,19 @@ export default class HasRelationships<T extends FModel> {
 			this.query = query(colRef)
 		} catch(e) {}
 		return this
+	}
+
+	getPath(parent?: FModel, d:FModel[] = []) {
+		if(parent) {
+			d.push(parent)
+			this.getPath(parent?.parent, d)
+		}
+		return d.slice().reverse().map((x, i) => {
+			if(!i) {
+				return `${x.table}/${x.id}`
+			}
+			return `/${x.tableName}/${x.id}`
+		}).join('')
 	}
 
 	belongsTo(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
@@ -90,6 +107,7 @@ export default class HasRelationships<T extends FModel> {
 		this.type = 'hasOne'
 		const model = new related({})
 		const keys = this.getKeys(foreignKey, localKey)
+		this.keys = keys
 		this.relatedModel = related
 		const colRef = collection(window.alcDB, model.table)
 		const p = this.parent as IIndexable
@@ -107,11 +125,18 @@ export default class HasRelationships<T extends FModel> {
 		return this
 	}
 
+	limit(num: number) {
+		this.query = query(this.query!, limit(num))
+		return this
+	}
+
 	async get(): Promise<T[]> {
 		const data: T[] = []
 		const snap = await getDocs(this.query!)
 		snap.forEach(x => {
-			data.push(new this.relatedModel!(x.data() as IIndexable))
+			const m = new this.relatedModel!(x.data() as IIndexable)
+			m.setParent(this.parent)
+			data.push(m)
 		})
 		return data
 	}
@@ -148,6 +173,24 @@ export default class HasRelationships<T extends FModel> {
 			case 'belongsTo':
 				await this.belongsToSave(data as T)
 				break
+			case 'hasOne':
+				await this.hasOneSave(data as T)
+				break
+		}
+	}
+
+	async hasOneSave(data: T) {
+		const p = this.parent as IIndexable
+		const tableName = new this.relatedModel!({}).table
+		const col = collection(window.alcDB, tableName)
+		const q = query(col, where(this.keys.foreignKey!, '==', p[this.keys.localKey]))
+		const res = await getDocs(q)
+		if(!res.empty) {
+			const d = new this.relatedModel!(Object.assign(res.docs[0].data(), data.getPostable()))
+			await d.save()
+		} else {
+			data.update({[this.keys.foreignKey!]: this.parent.id})
+			await data.save()
 		}
 	}
 
@@ -158,7 +201,7 @@ export default class HasRelationships<T extends FModel> {
 		}
 		const res = await data.save()
 		this.parent.update({[this.keys.foreignKey!]: res.id})
-		await this.parent.save()
+		await this.parent.save(false)
 	}
 
 	async hasManySave(data: T|T[]) {

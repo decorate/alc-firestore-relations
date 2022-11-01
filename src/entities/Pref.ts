@@ -25,6 +25,6 @@ export default class Pref extends FModel {
 	}
 
 	_tests() {
-		return this.hasRelationships.hasManySub(Test, `${this.id}/tests`)
+		return this.hasRelationships.hasManySub(Test, `tests`)
 	}
 }

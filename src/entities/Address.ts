@@ -26,6 +26,6 @@ export default class Address extends FModel {
 	}
 
 	_pref() {
-		return this.hasRelationships.hasManySub(Pref, `${this.id}/pref`)
+		return this.hasRelationships.hasManySub(Pref, `pref`)
 	}
 }
