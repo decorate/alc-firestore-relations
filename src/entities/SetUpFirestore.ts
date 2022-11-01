@@ -19,7 +19,7 @@ export class SetUpFirestore {
 			}
 
 			if(config?.test) {
-				connectFirestoreEmulator(window.alcDB, 'localhost', 9092)
+				connectFirestoreEmulator(window.alcDB, config?.url || 'localhost', config?.port || 9092)
 			}
 		}
 	}

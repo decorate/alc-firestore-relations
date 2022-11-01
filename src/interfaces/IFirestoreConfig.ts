@@ -9,5 +9,7 @@ export interface IFirestoreConfig {
 	appId: string,
 	measurementId?: string,
 	prefix?: string,
-	test?: boolean
+	test?: boolean,
+	port?: number,
+	url?: string
 }

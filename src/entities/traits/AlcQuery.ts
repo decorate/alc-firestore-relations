@@ -52,18 +52,18 @@ export default class AlcQuery<T extends FModel> {
 	}
 
 	async find(value: string) {
-		const col = collection(window.alcDB, new this.model().table)
-		const d = doc(col, value)
-		const res = await getDoc(d)
-		return new this.model(res.data())
+		this.addQuery(where('id', '==', value))
+		const res = await this.get()
+		if(res.length) {
+			return res[0]
+		}
 	}
 
 	async first() {
-		const col = collection(window.alcDB, new this.model().table)
-		const q = query(col, limit(1))
-		const res = await getDocs(q)
-		if(res.docs.length) {
-			return new this.model(res.docs[0].data())
+		this.addQuery(limit(1))
+		const res = await this.get()
+		if(res.length) {
+			return res[0]
 		}
 	}
 

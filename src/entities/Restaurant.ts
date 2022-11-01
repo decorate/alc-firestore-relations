@@ -69,21 +69,21 @@ export default class Restaurant extends FModel {
 		await Promise.all(Array.from(Array(num))
 			.map(async (x, i) => {
 
-				const reviews = this.randomArr(11).map((v, k) => {
+				const reviews = this.randomArr(3).map((v, k) => {
 					return new Review({
 						title: faker.random.word(),
 						body: faker.random.words()
 					})
 				})
 
-				const addresses = this.randomArr(5).map(x => {
-					const pref = this.randomArr(5).map(v => {
-						const infos = this.randomArr(3).map(k => {
+				const addresses = this.randomArr(1).map(x => {
+					const pref = this.randomArr(1).map(v => {
+						const infos = this.randomArr(1).map(k => {
 							return new Info({
 								body: faker.random.words()
 							})
 						})
-						const tests = this.randomArr(3).map(k => {
+						const tests = this.randomArr(1).map(k => {
 							return new Test({
 								text: faker.random.word(),
 								infos

@@ -13,13 +13,13 @@ import {
 	deleteDoc, Query, FieldPath, WhereFilterOp, where,
 } from '@firebase/firestore'
 import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
-import pluralize from 'pluralize'
+import pluralize, { isPlural, isSingular } from 'pluralize'
 import HasRelationships from '@/entities/traits/HasRelationships'
 import AlcQuery from '@/entities/traits/AlcQuery'
 import {setValueByKey, getValueByKey} from '@/utility/objectUtility'
 import SimplePaginate from '@/entities/traits/SimplePaginate'
 
-class FModel extends Model {
+export default class FModel extends Model {
 	query: Query
 	id: string = ''
 	tableName?: string
@@ -121,7 +121,8 @@ class FModel extends Model {
 	get table(): string {
 		let name = this.tableName
 		if(!name) {
-			name = pluralize(camelCase(this.constructor.name))
+			const c = camelCase(this.constructor.name)
+			name = pluralize(c)
 		}
 		return `${this.prefix}${name}`
 	}
@@ -202,5 +203,3 @@ class FModel extends Model {
 		this.parent = model
 	}
 }
-
-export default FModel

@@ -1,4 +1,4 @@
-import { FModel } from '@/index'
+import FModel  from '../FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
 
 export default class Review extends FModel {

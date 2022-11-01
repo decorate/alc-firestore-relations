@@ -33,6 +33,8 @@ import RestaurantDetail from '@/entities/RestaurantDetail'
 import President from '@/entities/President'
 import PresidentDetail from '@/entities/PresidentDetail'
 import FModel from '@/FModel'
+import {camelCase} from '@/utility/stringUtility'
+import pluralize, { isPlural, isSingular } from 'pluralize'
 
 export default {
   name: 'Home',
@@ -52,7 +54,7 @@ export default {
     //this.test5()
     //this.test6()
     //this.test7()
-
+    //this.test8()
   },
 
   methods: {
@@ -180,6 +182,12 @@ export default {
           })
         })
       })
+    },
+
+    async test8() {
+      const r = await Restaurant.query().with(['_reviews']).find('1667224190213_Ki0NPdWYOqhPUKHSk2j6')
+      const reviews = [...r.reviews, new Review({title: 'ok'})]
+      r.update({reviews: reviews})
     }
 
   },

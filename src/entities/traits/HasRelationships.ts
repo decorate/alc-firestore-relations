@@ -225,12 +225,13 @@ export default class HasRelationships<T extends FModel> {
 				const col = collection(window.alcDB, this.subPath!)
 				const d = doc(col)
 				x.update({id: d.id})
+				x.setParent(this.parent)
 				await setDoc(d, x.getPostable())
 				await Promise.all(x.arrayMapTarget.map(async v => {
 					const m = x as IIndexable
 					if(m[`_${v.bindKey}`]) {
 						if(m[v.bindKey].length) {
-							this.setRelations(this.subPath!, m, v.bindKey)
+							await this.setRelations(m, v.bindKey)
 						}
 					}
 				}))
@@ -240,31 +241,23 @@ export default class HasRelationships<T extends FModel> {
 		const col = collection(window.alcDB, this.subPath!)
 		const d = doc(col)
 		data.update({id: d.id})
+		data.setParent(this.parent)
 		await setDoc(d, data.getPostable())
 		await Promise.all(data.arrayMapTarget.map(async x => {
 			const d = data as IIndexable
 			if(d[`_${x.bindKey}`]) {
 				if(d[x.bindKey].length) {
-					this.setRelations(this.subPath!, d, x.bindKey)
+					await this.setRelations(d, x.bindKey)
 				}
 			}
 		}))
 	}
 
-	private async setRelations(_path = '', source: IIndexable, bindKey: string) {
+	private async setRelations(source: IIndexable, bindKey: string) {
 		const relation = source[`_${bindKey}`]()
 		if(!relation) {
 			return
 		}
-		const path = `${_path}/${relation.subPath!}`
-		relation.setQuery(path)
-		relation.subPath = path
 		await relation.save(source[bindKey])
-		source[bindKey].map((v: T) => {
-			v.arrayMapTarget.map(k => {
-				const s = v as IIndexable
-				this.setRelations(`${path}`, s, k.bindKey)
-			})
-		})
 	}
 }
