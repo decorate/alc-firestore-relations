@@ -59,17 +59,16 @@ export default {
     async test1() {
       await this.restaurants
           .with(['_addresses._pref'])
-          //.with(['_addresses._pref._tests._infos'])
-          // .with(['_reviews'])
-          // .with(['_detail'])
-          // .with([{key: '_addresses', query: () => {
-          //     return [
-          //       orderBy('address', 'desc'),
-          //     ]
-          //   }}])
-          //.where('id', '==', '1666851262059_IvhuTBs9Y5hZJmsNcd5O')
-          // .with(['_president._detail'])
-          // .orderBy('id', 'desc')
+          .with(['_addresses._pref._tests._infos'])
+          .with(['_reviews'])
+          .with(['_detail'])
+          .with([{key: '_addresses', query: () => {
+              return [
+                orderBy('address', 'desc'),
+              ]
+            }}])
+          .with(['_president._detail'])
+          .orderBy('id', 'asc')
       //.limit(1)
       .simplePaginate(1)
 
@@ -82,7 +81,7 @@ export default {
 
     // hasManySave
     async test2() {
-      const r = await Restaurant.query().find('1666851262059_IvhuTBs9Y5hZJmsNcd5O')
+      const r = await Restaurant.query().first()
       // r._reviews().save([
       //     new Review({title: 'test save', body: 'test save body'})
       // ])
@@ -93,7 +92,7 @@ export default {
 
     // hasManySubSave
     async test3() {
-      const r = await Restaurant.query().find('1666851262059_IvhuTBs9Y5hZJmsNcd5O')
+      const r = await Restaurant.query().first()
       r._addresses().save([
         new Address({
           address: '秋葉原',
@@ -120,7 +119,7 @@ export default {
 
     // belongsToSave
     async test4() {
-      const r = await Restaurant.query().find('1666851262059_IvhuTBs9Y5hZJmsNcd5O')
+      const r = await Restaurant.query().first()
       r._detail().save(new RestaurantDetail({
         tel: '08011112222',
         email: 'beTest2@mail.com'
@@ -159,7 +158,7 @@ export default {
 
     // hasOneSave
     async test6() {
-      const r = await Restaurant.query().find('1666851262059_IvhuTBs9Y5hZJmsNcd5O')
+      const r = await Restaurant.query().first()
       r._president().save(new President({
         name: 'test4社長',
         detail: new PresidentDetail({

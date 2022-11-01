@@ -107,10 +107,10 @@ export default class AlcQuery<T extends FModel> {
 						const res = await relation.get()
 						this.documentLen = this.documentLen+res.length
 						if(relation.type === 'hasMany' || relation.type === 'hasManySub') {
-							m.update({[relatedName]: res})
+							m.setValueByKey(relatedName, res)
 						}
 						if((relation.type === 'belongsTo' || relation.type === 'hasOne') && res.length) {
-							m.update({[relatedName]: res[0]})
+							m.setValueByKey(relatedName, res[0])
 						}
 					}
 
@@ -131,10 +131,10 @@ export default class AlcQuery<T extends FModel> {
 						const res = await relation.get()
 						this.documentLen = this.documentLen+res.length
 						if(relation.type === 'hasMany' || relation.type === 'hasManySub') {
-							m.update({[relatedName]: res})
+							m.setValueByKey(relatedName, res)
 						}
 						if((relation.type === 'belongsTo' || relation.type === 'hasOne') && res.length) {
-							m.update({[relatedName]: res[0]})
+							m.setValueByKey(relatedName, res[0])
 						}
 					}
 				}
@@ -165,7 +165,8 @@ export default class AlcQuery<T extends FModel> {
 				}
 				let nextPath = ''
 				if(path) {
-					nextPath = `${path}/${relation.subPath}`
+					//nextPath = `${path}/${relation.subPath}`
+					nextPath = `${relation.subPath}`
 					relation.setQuery(nextPath)
 				}
 				if(!path) {
