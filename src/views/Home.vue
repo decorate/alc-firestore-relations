@@ -49,7 +49,7 @@ export default {
 
   async created() {
     //await Restaurant.seed(20)
-    //this.test1()
+    this.test1()
     //this.test2()
     //this.test3()
     //this.test4()
@@ -64,18 +64,6 @@ export default {
     //     .get()
     // console.log(r[0].name)
 
-    /**
-     *
-     * @type {Restaurant}
-     */
-    const r = await Restaurant.query().first()
-    const res = r._reviews().simplePaginate(2)
-    await res.next()
-    console.log(res.data.map(x => x.title).join(','))
-    setTimeout(async () => {
-      await res.next()
-      console.log(res.data.map(x => x.title).join(','))
-    }, 3000)
   },
 
   methods: {
