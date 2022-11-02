@@ -55,6 +55,8 @@ export default {
     //this.test6()
     //this.test7()
     //this.test8()
+    // const r = await new Restaurant({id: 'test', addresses: [new Address({address: 'ok'})]}).save()
+    // console.log(r)
   },
 
   methods: {

@@ -223,10 +223,13 @@ export default class HasRelationships<T extends FModel> {
 		if(Array.isArray(data)) {
 			data.map(async x => {
 				const col = collection(window.alcDB, this.subPath!)
-				const d = doc(col)
-				x.update({id: d.id})
+				let d = doc(col)
+				x.update({id: x.id || `${x.idPrefix}${d.id}`})
 				x.setParent(this.parent)
-				await setDoc(d, x.getPostable())
+				d = doc(col, x.id)
+				const data = {...x.getPostable()} as IIndexable
+				x.addTimeStamp(data)
+				await setDoc(d, data)
 				await Promise.all(x.arrayMapTarget.map(async v => {
 					const m = x as IIndexable
 					if(m[`_${v.bindKey}`]) {
@@ -239,10 +242,13 @@ export default class HasRelationships<T extends FModel> {
 			return
 		}
 		const col = collection(window.alcDB, this.subPath!)
-		const d = doc(col)
-		data.update({id: d.id})
+		let d = doc(col)
+		data.update({id: data.id || `${data.idPrefix}${d.id}`})
+		d = doc(col, data.id)
 		data.setParent(this.parent)
-		await setDoc(d, data.getPostable())
+		const params = {...data.getPostable()} as IIndexable
+		data.addTimeStamp(params)
+		await setDoc(d, params)
 		await Promise.all(data.arrayMapTarget.map(async x => {
 			const d = data as IIndexable
 			if(d[`_${x.bindKey}`]) {

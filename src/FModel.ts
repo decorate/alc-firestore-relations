@@ -10,7 +10,7 @@ import {
 	DocumentReference,
 	query,
 	getDocs,
-	deleteDoc, Query, FieldPath, WhereFilterOp, where,
+	deleteDoc, Query, FieldPath, WhereFilterOp, where, Timestamp
 } from '@firebase/firestore'
 import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
 import pluralize, { isPlural, isSingular } from 'pluralize'
@@ -22,11 +22,13 @@ import SimplePaginate from '@/entities/traits/SimplePaginate'
 export default class FModel extends Model {
 	query: Query
 	id: string = ''
-	tableName?: string
+	tableName: string = ''
 	prefix: string = ''
 	db: Firestore
 	idPrefix: string = ''
 	parent?: FModel
+	createdAt?: Timestamp
+	updatedAt?: Timestamp
 
 	_sender: string[] = []
 
@@ -47,6 +49,8 @@ export default class FModel extends Model {
 
 		this.query = query(collection(this.db, this.table))
 
+		this.sender.push(...['createdAt', 'updatedAt'])
+
 		if(data) {
 			this.data = data
 		}
@@ -55,12 +59,15 @@ export default class FModel extends Model {
 	async save(fireRelation = true) {
 		const colRef = collection(this.db!, this.table)
 		const d = doc(colRef)
-		const id = this.id || `${this.idPrefix}${d.id}`
+		const id = this.id ?? `${this.idPrefix}${d.id}`
 		const _doc = doc(colRef, id)
 		const data = {
 			...this.getPostable(),
 			id: id
-		}
+		} as IIndexable
+
+		this.addTimeStamp(data)
+
 		this.id = id
 		await setDoc(_doc, data)
 
@@ -88,7 +95,9 @@ export default class FModel extends Model {
 		})
 		.filter(x => {
 			const model = this as IIndexable
-			return Object.keys(model[x[0]].getPostable()).length
+			Object.keys(model[x[0]].getPostable())
+			.filter(v => ['created_at'].some(k => k != v))
+				.length
 		})
 		.map(async x => {
 			const model = this as IIndexable
@@ -187,8 +196,8 @@ export default class FModel extends Model {
 		})
 
 		const v = this.mapToObject(res)
-		this.afterPostable(v)
 
+		this.afterPostable(v)
 		return v
 	}
 
@@ -201,5 +210,20 @@ export default class FModel extends Model {
 
 	setParent(model: FModel) {
 		this.parent = model
+	}
+
+	addTimeStamp(data: IIndexable) {
+		const upKey = this.converter.camelToSnake('updatedAt')
+		const cKey = this.converter.camelToSnake('createdAt')
+
+		data[cKey] = this.createdAt ?? Timestamp.now()
+		data[upKey] = Timestamp.now()
+
+		if(!this.createdAt) {
+			this.createdAt = data[cKey]
+		}
+		if(!this.updatedAt) {
+			this.updatedAt = data[upKey]
+		}
 	}
 }

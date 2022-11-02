@@ -18,10 +18,10 @@ export default class Restaurant extends FModel {
 	name: string = ''
 	categoryId: number = 0
 	detailId: string = ''
-	reviews?: Review[] = []
-	detail?: RestaurantDetail = new RestaurantDetail()
-	president?: President = new President()
-	addresses?: Address[] = []
+	reviews: Review[] = []
+	detail: RestaurantDetail = new RestaurantDetail()
+	president: President = new President()
+	addresses: Address[] = []
 
 	constructor(data?: IIndexable) {
 		super(data)

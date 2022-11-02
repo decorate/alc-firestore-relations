@@ -327,4 +327,35 @@ describe('firestore test', () => {
 		expect(r!.detail!.email).toBe('ok@mail.com')
 		expect(r!.detail!.id).toBe(r!.detailId)
 	})
+
+	test('add timestamp', async () => {
+		await new Restaurant({id: 'test'}).save()
+		let r = await Restaurant.query().with(['_detail']).first()
+		expect(r!.detail.id).toBe('')
+		expect(r!.createdAt).not.toBeNull()
+		expect(r!.updatedAt).not.toBeNull()
+	})
+
+	test.only('relation save add timestamp', async () => {
+		await new Restaurant({
+			id: 'test',
+			addresses: [
+				new Address({address: '新小岩', pref: [new Pref()]})
+			],
+			detail: new RestaurantDetail()
+		}).save()
+
+		const r = await Restaurant.query()
+		.with(['_addresses._pref'])
+		.with(['_detail'])
+			.find('test')
+
+		expect(r!.detail.createdAt).not.toBeNull()
+		expect(r!.detail.updatedAt).not.toBeNull()
+		expect(r!.addresses[0].createdAt).not.toBeNull()
+		expect(r!.addresses[0].updatedAt).not.toBeNull()
+		expect(r!.addresses[0].address).toBe('新小岩')
+		expect(r!.addresses[0].pref[0].createdAt).not.toBeNull()
+		expect(r!.addresses[0].pref[0].updatedAt).not.toBeNull()
+	})
 })
