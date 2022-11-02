@@ -11,11 +11,14 @@ import {
 	FieldPath,
 	QueryConstraint,
 	WhereFilterOp,
-	orderBy, OrderByDirection, limit,
+	orderBy, OrderByDirection, limit, QueryDocumentSnapshot,
 } from '@firebase/firestore'
 import pluralize from 'pluralize'
 import { camelToSnake, snakeToCamel } from '@/utility/stringUtility'
 import { doc, setDoc } from 'firebase/firestore'
+import SimplePaginate from '@/entities/traits/SimplePaginate'
+import AlcQuery from '@/entities/traits/AlcQuery'
+import { IPaginate } from '@/interfaces/IPaginate'
 
 type RelatedType = 'hasMany' | 'belongsTo' | 'hasOne' | 'hasManySub'
 
@@ -25,6 +28,8 @@ export default class HasRelationships<T extends FModel> {
 	relatedModel?: {new (data: IIndexable): T}
 	type?: RelatedType
 	subPath?: string
+	snapShot?: QueryDocumentSnapshot
+	paginator?: IPaginate<T>
 	private keys?: any
 
 	constructor(parent: FModel) {
@@ -115,6 +120,12 @@ export default class HasRelationships<T extends FModel> {
 		return this
 	}
 
+	simplePaginate(limit = 15) {
+		this.paginator = new SimplePaginate(this)
+		this.paginator.setLimit(limit)
+		return this.paginator
+	}
+
 	where(fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown) {
 		this.query = query(this.query!, where(fieldPath, opStr, value))
 		return this
@@ -133,6 +144,9 @@ export default class HasRelationships<T extends FModel> {
 	async get(): Promise<T[]> {
 		const data: T[] = []
 		const snap = await getDocs(this.query!)
+		if(snap.docs.length) {
+			this.snapShot = snap.docs[snap.docs.length-1]
+		}
 		snap.forEach(x => {
 			const m = new this.relatedModel!(x.data() as IIndexable)
 			m.setParent(this.parent)

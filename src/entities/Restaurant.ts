@@ -16,6 +16,7 @@ export default class Restaurant extends FModel {
 	tableName: string = 'restaurants'
 	id: string = ''
 	name: string = ''
+	status: number = 0
 	categoryId: number = 0
 	detailId: string = ''
 	reviews: Review[] = []
@@ -25,8 +26,9 @@ export default class Restaurant extends FModel {
 
 	constructor(data?: IIndexable) {
 		super(data)
-		this.fillable = ['id', 'name', 'categoryId', 'reviews', 'detailId', 'detail', 'president', 'addresses']
-		this.sender = ['id', 'name', 'categoryId', 'detailId']
+		this.fillable = ['id', 'name', 'categoryId', 'reviews', 'detailId', 'detail', 'president', 'addresses', 'status']
+		this.sender = ['id', 'name', 'categoryId', 'detailId', 'status']
+		this.presents = ['status']
 
 		this.idPrefix = new Date().getTime().toString() + '_'
 
@@ -54,15 +56,6 @@ export default class Restaurant extends FModel {
 
 	_president() {
 		return this.hasRelationships.hasOne(President)
-	}
-
-	static async test() {
-		[
-			{tel: '0311112222', email: 'test1@mail.com', name: 'ジョナサン', categoryId: 1},
-		].map(async x => {
-			const res = await new Restaurant({...x}).saveSub([
-			])
-		})
 	}
 
 	static async seed(num = 1) {

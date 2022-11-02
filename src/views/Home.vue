@@ -35,6 +35,8 @@ import PresidentDetail from '@/entities/PresidentDetail'
 import FModel from '@/FModel'
 import {camelCase} from '@/utility/stringUtility'
 import pluralize, { isPlural, isSingular } from 'pluralize'
+import {markRaw} from 'vue'
+import { Component } from 'vue-property-decorator'
 
 export default {
   name: 'Home',
@@ -61,12 +63,19 @@ export default {
     //     .limit(1)
     //     .get()
     // console.log(r[0].name)
-    const r = await Restaurant.query()
-      .orderBy('id')
-      .limit(1)
-      .get()
 
-    console.log(r)
+    /**
+     *
+     * @type {Restaurant}
+     */
+    const r = await Restaurant.query().first()
+    const res = r._reviews().simplePaginate(2)
+    await res.next()
+    console.log(res.data.map(x => x.title).join(','))
+    setTimeout(async () => {
+      await res.next()
+      console.log(res.data.map(x => x.title).join(','))
+    }, 3000)
   },
 
   methods: {
@@ -200,8 +209,7 @@ export default {
       const r = await Restaurant.query().with(['_reviews']).find('1667224190213_Ki0NPdWYOqhPUKHSk2j6')
       const reviews = [...r.reviews, new Review({title: 'ok'})]
       r.update({reviews: reviews})
-    }
-
+    },
   },
 
   components: {

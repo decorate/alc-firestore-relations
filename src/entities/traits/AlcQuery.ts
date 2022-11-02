@@ -10,7 +10,7 @@ import {
 	orderBy,
 	OrderByDirection,
 	QuerySnapshot, QueryConstraint,
-	QueryDocumentSnapshot, collection, startAfter, DocumentSnapshot,
+	QueryDocumentSnapshot, collection, startAfter, DocumentSnapshot, endBefore, startAt, endAt
 } from '@firebase/firestore'
 import FModel from '@/FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
@@ -20,6 +20,7 @@ import firebase from 'firebase/compat'
 import { IPaginate } from '@/interfaces/IPaginate'
 import { markRaw } from 'vue'
 import { doc } from 'firebase/firestore'
+import Restaurant from '@/entities/Restaurant'
 
 export default class AlcQuery<T extends FModel> {
 	#query: Query
@@ -89,6 +90,30 @@ export default class AlcQuery<T extends FModel> {
 	startAfter(snapshot: DocumentSnapshot<unknown>): AlcQuery<T>
 	startAfter(val: any): AlcQuery<T> {
 		const s = startAfter(val)
+		this.#query = query(this.#query, s)
+		return this
+	}
+
+	startAt(...fieldValues: unknown[]): AlcQuery<T>
+	startAt(snapshot: DocumentSnapshot<unknown>): AlcQuery<T>
+	startAt(val: any): AlcQuery<T> {
+		const s = startAt(val)
+		this.#query = query(this.#query, s)
+		return this
+	}
+
+	endBefore(...fieldValues: unknown[]): AlcQuery<T>
+	endBefore(snapshot: DocumentSnapshot<unknown>): AlcQuery<T>
+	endBefore(val: any): AlcQuery<T> {
+		const s = endBefore(val)
+		this.#query = query(this.#query, s)
+		return this
+	}
+
+	endAt(...fieldValues: unknown[]): AlcQuery<T>
+	endAt(snapshot: DocumentSnapshot<unknown>): AlcQuery<T>
+	endAt(val: any): AlcQuery<T> {
+		const s = endAt(val)
 		this.#query = query(this.#query, s)
 		return this
 	}

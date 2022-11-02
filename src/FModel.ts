@@ -50,7 +50,8 @@ export default class FModel extends Model {
 
 		this.query = query(collection(this.db, this.table))
 
-		this.sender.push(...['createdAt', 'updatedAt'])
+		const field = ['createdAt', 'updatedAt']
+		this.sender.length ? this.sender.push(...field) : this.fillable.push(...field)
 
 		if(data) {
 			this.data = data
@@ -60,7 +61,7 @@ export default class FModel extends Model {
 	async save(fireRelation = true) {
 		const colRef = collection(this.db!, this.table)
 		const d = doc(colRef)
-		const id = this.id ?? `${this.idPrefix}${d.id}`
+		const id = this.id || `${this.idPrefix}${d.id}`
 		const _doc = doc(colRef, id)
 		const data = {
 			...this.getPostable(),
@@ -96,8 +97,8 @@ export default class FModel extends Model {
 		})
 		.filter(x => {
 			const model = this as IIndexable
-			Object.keys(model[x[0]].getPostable())
-			.filter(v => ['created_at'].some(k => k != v))
+			return Object.keys(model[x[0]].getPostable())
+			.filter(v => ['created_at', 'updated_at', 'createAt', 'updatedAt'].every(k => k != v))
 				.length
 		})
 		.map(async x => {
@@ -228,7 +229,7 @@ export default class FModel extends Model {
 		}
 	}
 
-	setDocument(doc: DocumentData) {
-		this.document = doc
+	setDocument(_doc: DocumentData) {
+		this.document = _doc
 	}
 }

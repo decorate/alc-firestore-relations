@@ -5,15 +5,16 @@ import {
 	startAfter
 } from '@firebase/firestore'
 import { IPaginate } from '@/interfaces/IPaginate'
+import HasRelationships from '@/entities/traits/HasRelationships'
 
 export default class SimplePaginate<T extends FModel> implements IPaginate<T>{
 	limit: number = 15
-	alcQuery: AlcQuery<T>
+	alcQuery: AlcQuery<T>|HasRelationships<T>
 
 	hasNext: boolean = false
 	data: T[] = []
 
-	constructor(query: AlcQuery<T>, limit: number = 15) {
+	constructor(query: AlcQuery<T>|HasRelationships<T>, limit: number = 15) {
 		this.alcQuery = query
 		this.limit = limit
 

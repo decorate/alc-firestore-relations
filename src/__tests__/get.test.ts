@@ -57,12 +57,14 @@ describe('firestore test', () => {
 		expect(r?.name).toBe('test data')
 
 		r?.update({addresses: [
-				new Address({address: '新小岩'}),
-				new Address({address: '小岩'}),
+				new Address({address: 'A'}),
+				new Address({address: 'B'}),
 			]})
 		await r?.save()
 		r = await Restaurant.query().with(['_addresses']).find('test')
 		expect(r?.addresses?.length).toBe(2)
+		const a = r!.addresses.map(x => x.address).sort().join(',')
+		expect(a).toBe('A,B')
 	})
 
 	test('save sub collection', async () => {
@@ -70,13 +72,15 @@ describe('firestore test', () => {
 			id: 'test',
 			name: 'test data',
 			addresses: [
-				new Address({address: '新小岩'}),
-				new Address({address: '錦糸町'})
+				new Address({address: 'A'}),
+				new Address({address: 'B'})
 			]
 		}).save()
 
 		const r = await Restaurant.query().with(['_addresses']).find('test')
 		expect(r?.addresses?.length).toBe(2)
+		const a = r!.addresses.map(x => x.address).sort().join(',')
+		expect(a).toBe('A,B')
 	})
 
 	test('save belongsTo', async () => {
@@ -121,13 +125,15 @@ describe('firestore test', () => {
 			id: 'test',
 			name: 'test data',
 			reviews: [
-				new Review({title: 'ok', body: 'body'}),
-				new Review({title: 'ok2', body: 'body2'}),
+				new Review({title: 'A', body: 'body'}),
+				new Review({title: 'B', body: 'body2'}),
 			]
 		}).save()
 
 		const r = await Restaurant.query().with(['_reviews']).find('test')
 		expect(r?.reviews?.length).toBe(2)
+		const reviews = r!.reviews.map(x => x.title).sort().join(',')
+		expect(reviews).toBe('A,B')
 	})
 
 	test('hasMany update', async () => {
@@ -135,22 +141,24 @@ describe('firestore test', () => {
 			id: 'test',
 			name: 'test data',
 			reviews: [
-				new Review({title: 'ok', body: 'body'}),
-				new Review({title: 'ok2', body: 'body2'}),
+				new Review({title: 'A', body: 'body'}),
+				new Review({title: 'B', body: 'body2'}),
 			]
 		}).save()
 		let r = await Restaurant.query().with(['_reviews']).find('test')
-		await r?._reviews().save(new Review({title: 'ok3', body: 'body3'}))
+		await r?._reviews().save(new Review({title: 'C', body: 'body3'}))
 
 		r = await Restaurant.query().with(['_reviews']).find('test')
 		expect(r?.reviews?.length).toBe(3)
 
-		const reviews = [...r?.reviews!, new Review({title: 'ok4'})]
+		const reviews = [...r?.reviews!, new Review({title: 'D'})]
 		r?.setValueByKey('reviews', reviews)
 		await r?.save()
 
 		r = await Restaurant.query().with(['_reviews']).find('test')
 		expect(r?.reviews?.length).toBe(4)
+		const res = r!.reviews.map(x => x.title).sort().join(',')
+		expect(res).toBe('A,B,C,D')
 	})
 
 	test('hasOne save', async () => {
@@ -266,16 +274,18 @@ describe('firestore test', () => {
 
 		let r = await Restaurant.query().first()
 		r = r!
-		await r._addresses().save(new Address({address: '新小岩'}))
+		await r._addresses().save(new Address({address: 'A'}))
 
 		r = await Restaurant.query().with(['_addresses']).first()
 		expect(r!.addresses!.length).toBe(1)
+		expect(r!.addresses[0].address).toBe('A')
 
 		const address = r!.addresses![0]
-		await address._pref().save(new Pref({text: '東京'}))
+		await address._pref().save(new Pref({text: 'A+'}))
 
 		r = await Restaurant.query().with(['_addresses._pref']).first()
 		expect(r!.addresses![0].pref.length).toBe(1)
+		expect(r!.addresses![0].pref[0].text).toBe('A+')
 	})
 
 	test('relation array save hasManySub', async () => {
@@ -286,21 +296,25 @@ describe('firestore test', () => {
 		let r = await Restaurant.query().first()
 		r = r!
 		await r._addresses().save([
-			new Address({address: '新小岩'}),
-			new Address({address: '小岩'}),
+			new Address({address: 'A'}),
+			new Address({address: 'B'}),
 		])
 
 		r = await Restaurant.query().with(['_addresses']).first()
 		expect(r!.addresses!.length).toBe(2)
+		const res = r!.addresses.map(x => x.address).sort().join(',')
+		expect(res).toBe('A,B')
 
 		const address = r!.addresses![0]
 		await address._pref().save([
-			new Pref({text: '東京'}),
-			new Pref({text: '大阪'}),
+			new Pref({text: 'A+'}),
+			new Pref({text: 'B+'}),
 		])
 
 		r = await Restaurant.query().with(['_addresses._pref']).first()
 		expect(r!.addresses![0].pref.length).toBe(2)
+		const pr = r!.addresses[0].pref.map(x => x.text).sort().join(',')
+		expect(pr).toBe('A+,B+')
 	})
 
 	test('relation save hasMany', async () => {
@@ -308,13 +322,15 @@ describe('firestore test', () => {
 
 		let r = await Restaurant.query().first()
 		await r!._reviews().save([
-			new Review({title: 'ok review'}),
-			new Review({title: 'ok review2'}),
+			new Review({title: 'A'}),
+			new Review({title: 'B'}),
 		])
 
 		r = await Restaurant.query().with(['_reviews']).first()
 		expect(r!.reviews!.length).toBe(2)
 		expect(r!.reviews!.every(x => x.restaurantId == r!.id)).toBe(true)
+		const res = r!.reviews.map(x => x.title).sort().join(',')
+		expect(res).toBe('A,B')
 	})
 
 	test('relation save belongsTo', async () => {
@@ -336,7 +352,7 @@ describe('firestore test', () => {
 		expect(r!.updatedAt).not.toBeNull()
 	})
 
-	test.only('relation save add timestamp', async () => {
+	test('relation save add timestamp', async () => {
 		await new Restaurant({
 			id: 'test',
 			addresses: [
