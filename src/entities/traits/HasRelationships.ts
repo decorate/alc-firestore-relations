@@ -136,6 +136,7 @@ export default class HasRelationships<T extends FModel> {
 		snap.forEach(x => {
 			const m = new this.relatedModel!(x.data() as IIndexable)
 			m.setParent(this.parent)
+			m.setDocument(x)
 			data.push(m)
 		})
 		return data

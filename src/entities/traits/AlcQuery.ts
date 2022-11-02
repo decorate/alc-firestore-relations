@@ -10,7 +10,7 @@ import {
 	orderBy,
 	OrderByDirection,
 	QuerySnapshot, QueryConstraint,
-	QueryDocumentSnapshot, collection,
+	QueryDocumentSnapshot, collection, startAfter, DocumentSnapshot,
 } from '@firebase/firestore'
 import FModel from '@/FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
@@ -85,6 +85,14 @@ export default class AlcQuery<T extends FModel> {
 		return this
 	}
 
+	startAfter(...fieldValues: unknown[]): AlcQuery<T>
+	startAfter(snapshot: DocumentSnapshot<unknown>): AlcQuery<T>
+	startAfter(val: any): AlcQuery<T> {
+		const s = startAfter(val)
+		this.#query = query(this.#query, s)
+		return this
+	}
+
 	async get() {
 		this.setQueryLog(this.#query)
 		const d = await getDocs(this.#query)
@@ -95,6 +103,7 @@ export default class AlcQuery<T extends FModel> {
 
 		await Promise.all(d.docs.map(async x => {
 			let m = new this.model(x.data())
+			m.setDocument(x)
 			await Promise.all(this.withRelated.map(async v => {
 				if(typeof v == 'string') {
 					const relatedName = v.replace(/\_/g, '')

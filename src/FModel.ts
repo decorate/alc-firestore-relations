@@ -29,6 +29,7 @@ export default class FModel extends Model {
 	parent?: FModel
 	createdAt?: Timestamp
 	updatedAt?: Timestamp
+	document?: DocumentData
 
 	_sender: string[] = []
 
@@ -225,5 +226,9 @@ export default class FModel extends Model {
 		if(!this.updatedAt) {
 			this.updatedAt = data[upKey]
 		}
+	}
+
+	setDocument(doc: DocumentData) {
+		this.document = doc
 	}
 }

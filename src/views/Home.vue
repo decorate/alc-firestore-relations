@@ -23,7 +23,7 @@
 // @ is an alias to /src
 import {IPaginate} from '@/interfaces/IPaginate'
 import Restaurant from '@/entities/Restaurant'
-import {collection, collectionGroup, getDocs, limit, orderBy, query, where} from '@firebase/firestore'
+import {collection, collectionGroup, getDocs, limit, orderBy, query, startAfter, where, startAt, endBefore} from '@firebase/firestore'
 import Review from '@/entities/Review'
 import Address from '@/entities/Address'
 import Pref from '@/entities/Pref'
@@ -47,7 +47,7 @@ export default {
 
   async created() {
     //await Restaurant.seed(20)
-    this.test1()
+    //this.test1()
     //this.test2()
     //this.test3()
     //this.test4()
@@ -55,8 +55,18 @@ export default {
     //this.test6()
     //this.test7()
     //this.test8()
-    // const r = await new Restaurant({id: 'test', addresses: [new Address({address: 'ok'})]}).save()
-    // console.log(r)
+    // const r = await Restaurant.query()
+    //     .orderBy('id')
+    //     .startAfter(10)
+    //     .limit(1)
+    //     .get()
+    // console.log(r[0].name)
+    const r = await Restaurant.query()
+      .orderBy('id')
+      .limit(1)
+      .get()
+
+    console.log(r)
   },
 
   methods: {
