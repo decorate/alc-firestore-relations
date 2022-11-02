@@ -25,11 +25,12 @@ import Restaurant from '@/entities/Restaurant'
 export default class AlcQuery<T extends FModel> {
 	#query: Query
 	model: new (data?: IIndexable) => T
-	withRelated: Array<string|{key: string, query: any}>
+	withRelated: Array<string|{key: string, query: any, relation?: string}>
 	snapShot?: QueryDocumentSnapshot
 	paginator?: IPaginate<T>
 	private queryLog: string[] = []
 	private documentLen: number = 0
+	private logStack: any[] = []
 
 	constructor(model: new (data?: IIndexable) => T, query: Query) {
 		this.#query = query
@@ -46,7 +47,7 @@ export default class AlcQuery<T extends FModel> {
 		return this
 	}
 
-	with(related: Array<string|{key: string, query: any}>) {
+	with(related: Array<string|{key: string, query: any, relation?: string}>) {
 		related.map(x => this.withRelated.push(x))
 		this.withRelated = [...new Set(this.withRelated)]
 		return this
@@ -170,6 +171,13 @@ export default class AlcQuery<T extends FModel> {
 						if((relation.type === 'belongsTo' || relation.type === 'hasOne') && res.length) {
 							m.setValueByKey(relatedName, res[0])
 						}
+
+						if(v.relation) {
+							const relatedNameSub = v.relation.replace(/\_/g, '')
+							await Promise.all(res.map(async (d: T, k: number) => {
+								await this.setHasManySub(m, [d], relatedNameSub, 0, '', '', `${relatedName}.${k}`)
+							}))
+						}
 					}
 				}
 
@@ -179,7 +187,7 @@ export default class AlcQuery<T extends FModel> {
 		return data
 	}
 
-	async setHasManySub(parentModel: T, rootModel: T[], relatedName: string, count: number = 0, path = '', targetKey:string = '') {
+	async setHasManySub(parentModel: T, rootModel: T[], relatedName: string, count: number = 0, path = '', targetKey:string = '', parentTargetKey: string = '') {
 		await Promise.all(
 			rootModel.map(async (x, i) => {
 				const model = x as IIndexable
@@ -190,6 +198,9 @@ export default class AlcQuery<T extends FModel> {
 				} else {
 					key = `${func[count]}`
 				}
+				if(parentTargetKey) {
+					key = `${parentTargetKey}.${func[count]}`
+				}
 				const f = `_${func[count]}`
 				if(model[f] == undefined) return
 				const relation = model[f]()
@@ -197,24 +208,13 @@ export default class AlcQuery<T extends FModel> {
 				if(relation.type != 'hasManySub') {
 					return
 				}
-				let nextPath = ''
-				if(path) {
-					//nextPath = `${path}/${relation.subPath}`
-					nextPath = `${relation.subPath}`
-					relation.setQuery(nextPath)
-				}
-				if(!path) {
-					nextPath = relation.subPath
-				}
 
 				this.setQueryLog(relation?.query)
 				const res = await relation.get()
 				this.documentLen = this.documentLen+res.length
 				if(res.length) {
-					const s = func.slice()
-					s.splice(count+1)
 					parentModel.setValueByKey(key, res)
-					await this.setHasManySub(parentModel, res, relatedName, count + 1, nextPath, key)
+					await this.setHasManySub(parentModel, res, relatedName, count + 1, relation.subPath, key)
 				}
 			})
 		)
@@ -270,7 +270,12 @@ export default class AlcQuery<T extends FModel> {
 	}
 
 	toQuery() {
-		return {queryLog: this.queryLog, documentLen: this.documentLen}
+		const log = {queryLog: this.queryLog, documentLen: this.documentLen}
+		this.queryLog = []
+		this.documentLen = 0
+		this.logStack.push(log)
+		const documentAll = this.logStack.map(x => x.documentLen).reduce((a, b) => a+b, 0)
+		return {log, stack: this.logStack, documentAll}
 	}
 
 	private setQueryLog(query?: any) {

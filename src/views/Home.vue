@@ -69,21 +69,22 @@ export default {
   methods: {
     async test1() {
       await this.restaurants
-          .with(['_addresses._pref'])
-          .with(['_addresses._pref._tests._infos'])
+          // .with(['_addresses._pref'])
+          // .with(['_addresses._pref._tests._infos'])
           .with(['_reviews'])
           .with(['_detail'])
           .with([{key: '_addresses', query: () => {
               return [
                 orderBy('address', 'desc'),
               ]
-            }}])
+            }, relation: '_pref._tests'}])
           .with(['_president._detail'])
           .orderBy('id', 'asc')
       //.limit(1)
       .simplePaginate(1)
 
-      this.next()
+      await this.next()
+      console.log(this.restaurants.paginator.data[0])
     },
     async next() {
       await this.restaurants.paginator.next()

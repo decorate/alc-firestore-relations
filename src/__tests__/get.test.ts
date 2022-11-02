@@ -374,4 +374,28 @@ describe('firestore test', () => {
 		expect(r!.addresses[0].pref[0].createdAt).not.toBeNull()
 		expect(r!.addresses[0].pref[0].updatedAt).not.toBeNull()
 	})
+
+	/**
+	 * withでorderByされた時正しくデータがセットされるか
+	 */
+	test('with in query orderBy correct data', async () => {
+		await new Restaurant({
+			id: 'test',
+			name: 'test1',
+			addresses: [
+				new Address({address: 'A', pref: [new Pref({text: 'A+'}), new Pref({text: 'B+'})]}),
+				new Address({address: 'B'}),
+			]
+		}).save()
+
+		const r = await Restaurant.query()
+			.with([{key: '_addresses', relation: '_pref', query: () => {
+					return [orderBy('address', 'desc')]
+				}}])
+			.first()
+
+		expect(r!.addresses[1].address).toBe('A')
+		expect(r!.addresses[1].pref.length).toBe(2)
+
+	})
 })
