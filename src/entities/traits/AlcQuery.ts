@@ -10,7 +10,7 @@ import {
 	orderBy,
 	OrderByDirection,
 	QuerySnapshot, QueryConstraint,
-	QueryDocumentSnapshot, collection, startAfter, DocumentSnapshot, endBefore, startAt, endAt
+	QueryDocumentSnapshot, collection, startAfter, DocumentSnapshot, endBefore, startAt, endAt, DocumentData,
 } from '@firebase/firestore'
 import FModel from '@/FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
@@ -132,7 +132,7 @@ export default class AlcQuery<T extends FModel> {
 			m.setDocument(x)
 			await Promise.all(this.withRelated.map(async v => {
 				if(typeof v == 'string') {
-					const relatedName = v.replace(/\_/g, '')
+					const relatedName = this.getRelatedName(v)
 					const model = m as IIndexable
 					if(model[v] instanceof Function) {
 						const relation = await model[v]()
@@ -150,7 +150,6 @@ export default class AlcQuery<T extends FModel> {
 					}
 
 					if(/\./.test(relatedName)) {
-						await this.setHasManySub(m, [m], relatedName)
 						await this.setRelations(m, [m], relatedName)
 					}
 				} else {
@@ -174,9 +173,7 @@ export default class AlcQuery<T extends FModel> {
 
 						if(v.relation) {
 							const relatedNameSub = v.relation.replace(/\_/g, '')
-							await Promise.all(res.map(async (d: T, k: number) => {
-								await this.setHasManySub(m, [d], relatedNameSub, 0, '', '', `${relatedName}.${k}`)
-							}))
+							await this.setRelations(m, res, relatedNameSub, 0, `${relatedName}`)
 						}
 					}
 				}
@@ -187,78 +184,61 @@ export default class AlcQuery<T extends FModel> {
 		return data
 	}
 
-	async setHasManySub(parentModel: T, rootModel: T[], relatedName: string, count: number = 0, path = '', targetKey:string = '', parentTargetKey: string = '') {
+	async setRelations(parent: T, roots: T[], relatedName: string, parentIndex: number = 0, targetKey: string = '', parentType: string = '') {
 		await Promise.all(
-			rootModel.map(async (x, i) => {
+			roots.map(async (x, i) => {
+				const propertyName = this.getRelatedName(relatedName, parentIndex)
+				const funcName = `_${propertyName}`
 				const model = x as IIndexable
-				const func = relatedName.split('.')
-				let key = ''
-				if(count && func[count]) {
-					key = `${targetKey}.${i}.${func[count]}`
-				} else {
-					key = `${func[count]}`
-				}
-				if(parentTargetKey) {
-					key = `${parentTargetKey}.${func[count]}`
-				}
-				const f = `_${func[count]}`
-				if(model[f] == undefined) return
-				const relation = model[f]()
 
-				if(relation.type != 'hasManySub') {
-					return
+				if(model[funcName] == undefined) return
+				const relation = model[funcName]()
+
+				let key = propertyName
+				if(targetKey && propertyName) {
+					if(relation.type === 'hasMany' || relation.type === 'hasManySub') {
+						key = `${targetKey}.${i}.${propertyName}`
+					} else {
+						key = `${targetKey}.${propertyName}`
+					}
+				}
+
+				if(relation.type === 'hasManySub') {
+					let skip = 0
+					if(parentType && relation.type != parentType) {
+						skip = 1
+					}
+					const path = relation.getPath(relation.parent, [], skip) + `/${propertyName}`
+					relation.setQuery(path)
+					relation.subPath = path
 				}
 
 				this.setQueryLog(relation?.query)
 				const res = await relation.get()
 				this.documentLen = this.documentLen+res.length
 				if(res.length) {
-					parentModel.setValueByKey(key, res)
-					await this.setHasManySub(parentModel, res, relatedName, count + 1, relation.subPath, key)
+					const s = relatedName.split('.').slice()
+					s.splice(parentIndex+1)
+					if(relation.type == 'hasMany' || relation.type == 'hasManySub') {
+						parent.setValueByKey(key, res)
+					} else {
+						parent.setValueByKey(key, res[0])
+					}
+					await this.setRelations(parent, res, relatedName, parentIndex + 1, key, relation.type)
 				}
 			})
 		)
 	}
 
-	async setRelations(parentModel: T, rootModel: T[], relatedName: string, count: number = 0, targetKey:string = '') {
-		await Promise.all(
-			rootModel.map(async (x, i) => {
-				const model = x as IIndexable
-				const func = relatedName.split('.')
-				let key = ''
-				const f = `_${func[count]}`
-				if(model[f] == undefined) return
-				const relation = model[f]()
+	getRelatedName(val: string, index?: number) {
+		const r = val.replace(/\_/g, '')
+		if(index === undefined) {
+			return r
+		}
 
-				if(count && func[count]) {
-					if(relation.type == 'hasMany') {
-						key = `${targetKey}.${i}.${func[count]}`
-					} else {
-						key = `${targetKey}.${func[count]}`
-					}
-				} else {
-					key = `${func[count]}`
-				}
-				if(relation.type == 'hasManySub') {
-					return
-				}
-
-				this.setQueryLog(relation?.query)
-				const res = await relation.get()
-				this.documentLen = this.documentLen+res.length
-				if(res.length) {
-					const s = func.slice()
-					s.splice(count+1)
-					if(relation.type == 'hasMany') {
-						parentModel.setValueByKey(key, res)
-					} else {
-						parentModel.setValueByKey(key, res[0])
-					}
-					await this.setRelations(parentModel, res, relatedName, count + 1, key)
-				}
-			})
-		)
+		return r.split('.')[index]
 	}
+
 
 	createPaginator() {
 		this.paginator = new SimplePaginate(this)

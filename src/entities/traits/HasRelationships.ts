@@ -83,12 +83,13 @@ export default class HasRelationships<T extends FModel> {
 		return this
 	}
 
-	getPath(parent?: FModel, d:FModel[] = []) {
+	getPath(parent?: FModel, d:FModel[] = [], skip:number = 0) {
 		if(parent) {
 			d.push(parent)
 			this.getPath(parent?.parent, d)
+			//return ''
 		}
-		return d.slice().reverse().map((x, i) => {
+		return d.slice().reverse().filter((x, i) => i >= skip).map((x, i) => {
 			if(!i) {
 				return `${x.table}/${x.id}`
 			}

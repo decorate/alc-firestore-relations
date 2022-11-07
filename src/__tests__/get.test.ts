@@ -1,7 +1,7 @@
 import { SetUpFirestore } from '@/entities/SetUpFirestore'
 import config from '@/private/config.json'
 import Restaurant from '@/entities/Restaurant'
-import { collection, getDocs, limit, orderBy, query, where } from '@firebase/firestore'
+import { collection, collectionGroup, getDocs, limit, orderBy, query, where } from '@firebase/firestore'
 import { initializeApp } from 'firebase/app'
 import { connectFirestoreEmulator, doc, getFirestore, setDoc } from 'firebase/firestore'
 import axios from 'axios'
@@ -378,7 +378,7 @@ describe('firestore test', () => {
 	/**
 	 * withでorderByされた時正しくデータがセットされるか
 	 */
-	test('with in query orderBy correct data', async () => {
+	test('hasManySub with in query orderBy correct data', async () => {
 		await new Restaurant({
 			id: 'test',
 			name: 'test1',
@@ -394,8 +394,39 @@ describe('firestore test', () => {
 				}}])
 			.first()
 
+		expect(r!.addresses.map(x => x.address).join(',')).toBe('B,A')
 		expect(r!.addresses[1].address).toBe('A')
 		expect(r!.addresses[1].pref.length).toBe(2)
+		expect(r!.addresses[1].pref.map(x => x.text).join(',')).toBe('A+,B+')
+		expect(r!.addresses[0].pref.length).toBe(0)
 
+	})
+
+	test('hasMany relations hasManySub save', async () => {
+		await new Restaurant({
+			id: 'test',
+			reviews: [
+				new Review({title: 'A', id: 'A1'}),
+				new Review({title: 'B', id: 'B1', tests: [
+						new Test({text: 'B+'}),
+						new Test({text: 'C+'}),
+					]}),
+				new Review({title: 'C', id: 'C1'}),
+			]
+		})
+		.save()
+
+		const r = await Restaurant.query()
+			.with(['_reviews._tests'])
+			.orderBy('id')
+			.first()
+
+		expect(r!.id).toBe('test')
+		expect(r!.reviews.length).toBe(3)
+		expect(r!.reviews[0].title).toBe('A')
+		expect(r!.reviews[0].tests.length).toBe(0)
+		expect(r!.reviews[1].title).toBe('B')
+		expect(r!.reviews[1].tests.length).toBe(2)
+		expect(r!.reviews[1].tests.map(x => x.text).sort().join(',')).toBe('B+,C+')
 	})
 })
