@@ -572,4 +572,9 @@ describe('firestore test', () => {
 		expect(q.documentAll).toBe(11)
 
 	})
+
+	test.only('test', () => {
+		const r = new Model({text: 'A'})
+		console.log(r.sender)
+	})
 })

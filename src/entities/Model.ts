@@ -25,7 +25,7 @@ export default class Model extends FModel {
 		super(data)
 		this.primaryKey = 'uid'
 		this.fillable = ['uid', 'text', 'detail', 'detailId', 'modelDetail', 'modelDetailId', 'child', 'targets', 'addresses']
-		this.sender = ['uid', 'text', 'detailId', 'modelDetailId']
+		this.sender = this.fillable.filter(x => ['detail', 'child', 'targets', 'addresses'].every(v => v != x))
 
 		this.idPrefix = new Date().getTime().toString() + '_'
 

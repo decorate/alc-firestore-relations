@@ -1,11 +1,11 @@
 
 
   
-## alcts
+## alc-firestore-relations
 ### Installation  
 With yarn:
   
- 	yarn add @team-decorate/alcts  
+ 	yarn add @team-decorate/alc-firestore-relations
  	
 ### Usage  
   
@@ -32,25 +32,37 @@ class User extends Model {
   posts: Array<Post> = []
   userComments: Array<Comment> = []
 
-  constructor(data: object = {}) {  
+  constructor(data?: IIndextable) {  
 	 super()         
 	 this.fillable = FILLABLE 
 	 //presents is send even if the field is empty 
 	 this.presents = ['type']  
+	 //sender is allows non-empty value
+	 this.sender = this.fillable.filter(x => ['posts', 'userComments'].every(v => v != x))
 	 
 	 this.arrayMap(  
 		 new ArrayMappable(Post), 
 		 new ArrayMappable(Comment).bind('userComments')
 	) 
 	
-	this.data = data
- }
+	if(data) {
+	    this.data = data
+	}
+    }
+    
+    _posts() {
+		return this.hasRelationships.hasMany(Post)
+    }
+    
+    _userComments() {
+		return this.hasRelationships.hasManySub(Comment, 'user_comments')
+    }
 }  
 ```  
   
 #### How to use
 ```json
-	#user api json response
+	#user firestore response
 	{
 	  "id": 1,
 	  "name": "test-user",
@@ -69,32 +81,27 @@ class User extends Model {
 ```js  
   
 export default {  
- methods: { 
-	 async get() {  
-		 const { data } = await axios.get('/api/user')  
-		 this.user = new User(data)
-		 
-		 this.user
-		    .posts
-		    .forEach(x => console.log(x instanceof Post)) //true
-		 
-		 for post in this.user.posts {
-			 console.log(post.text)
-			 console.log(post instanceof Post)// true
-		 }
+ methods: {
+     async get() {
+         this.user = await User.query()
+             .with(['_posts', '_userComments'])
+             .find(1)
 
-		for comment in this.user.userComments {
-			console.log(comment instanceof Comment)// true
-		}
-	 },
+         expect(this.user.id).toBe(1)
+         expect(this.user.name).toBe('test-user')
+         expect(this.user.posts.length).toBe(2)
+         expect(this.user.userComments.length).toBe(2)
+     },
 
-	async post() {
-		/*
-		* What is added to fillable and contains value is sent
-		*/
-		const {data} = await this.user.post('/api/user')
-		this.user.update(data)
-	}
+     async post() {
+         /*
+         * Added to the fillable and the one containing the value is sent and saved in firestore
+         */
+         await new User({
+             name: 'A', email: 'test@mail.com',
+             posts: [new Post({title: 'A+'})]
+         }).save()
+     }
 	
   }
 }  
