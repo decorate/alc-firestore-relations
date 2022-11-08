@@ -276,7 +276,15 @@ export default class AlcQuery<T extends FModel> {
 		let filter = q.filters.map((x: any) => {
 			const f = x.field.segments.join('/')
 			const op = x.op
-			const v = x.value.stringValue
+			let v = x.value.stringValue
+			if(!v) {
+				v = x.value.arrayValue?.values?.map((d: any) => d.stringValue).join(',')
+				if(v) {
+					v = `[${v}]`
+				} else {
+					v = ''
+				}
+			}
 			const a = `f:${f}${op}${v}`
 			return a
 		}).join(',')
@@ -296,6 +304,11 @@ export default class AlcQuery<T extends FModel> {
 		if(q.limit) {
 			limit = `|l:${q.limit}`
 		}
-		this.queryLog.push(`${path}${filter}${order}${limit}`)
+
+		let group = ''
+		if(q.collectionGroup) {
+			group = `|cg:${q.collectionGroup}`
+		}
+		this.queryLog.push(`${group}${path}${filter}${order}${limit}`)
 	}
 }

@@ -49,7 +49,7 @@ export default {
 
   async created() {
     //await Restaurant.seed(20)
-    this.test1()
+    //this.test1()
     //this.test2()
     //this.test3()
     //this.test4()
@@ -64,6 +64,10 @@ export default {
     //     .get()
     // console.log(r[0].name)
 
+    const r = await Review.collectionGroup()
+        .where('id', 'in', ['1667224190142_5KMUpnD0bao8beyNPHsm'])
+        .get()
+    console.log(r)
   },
 
   methods: {

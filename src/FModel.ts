@@ -10,7 +10,7 @@ import {
 	DocumentReference,
 	query,
 	getDocs,
-	deleteDoc, Query, FieldPath, WhereFilterOp, where, Timestamp
+	deleteDoc, Query, FieldPath, WhereFilterOp, where, Timestamp, collectionGroup,
 } from '@firebase/firestore'
 import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
 import pluralize, { isPlural, isSingular } from 'pluralize'
@@ -148,6 +148,12 @@ export default class FModel extends Model {
 	static query<T extends FModel>(this: new (data?: IIndexable) => T) {
 		const m = new this()
 		const q = query(collection(m.db, m.table))
+		return new AlcQuery(this, q, m.primaryKey)
+	}
+
+	static collectionGroup<T extends FModel>(this: new (data?: IIndexable) => T) {
+		const m = new this()
+		const q = query(collectionGroup(m.db, m.table))
 		return new AlcQuery(this, q, m.primaryKey)
 	}
 

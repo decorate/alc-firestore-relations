@@ -573,4 +573,22 @@ describe('firestore test', () => {
 
 	})
 
+	test('get collectionGroup', async () => {
+		await new Restaurant({
+			id: 'A', 'text': 'AA',
+			reviews: [
+				new Review({id: 'A+', title: 'A++'}),
+				new Review({id: 'B+', title: 'B++'}),
+				new Review({id: 'C+', title: 'C++'}),
+			]
+		}).save()
+
+		const q = Review
+			.collectionGroup()
+			.where('id', 'in', ['A+', 'C+'])
+
+		const r = await q.get()
+		expect(r.map(x => x.id).sort().join(',')).toBe('A+,C+')
+	})
+
 })
