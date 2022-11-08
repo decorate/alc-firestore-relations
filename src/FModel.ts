@@ -31,6 +31,8 @@ export default class FModel extends Model {
 	updatedAt?: Timestamp
 	document?: DocumentData
 
+	_primaryKey: string = ''
+
 	_sender: string[] = []
 
 	getValueByKey: (key: string) => {}
@@ -61,16 +63,17 @@ export default class FModel extends Model {
 	async save(fireRelation = true) {
 		const colRef = collection(this.db!, this.table)
 		const d = doc(colRef)
-		const id = this.id || `${this.idPrefix}${d.id}`
+		const indexable = this as IIndexable
+		const id = indexable[this.primaryKey] || `${this.idPrefix}${d.id}`
 		const _doc = doc(colRef, id)
 		const data = {
 			...this.getPostable(),
-			id: id
+			[this.primaryKey]: id
 		} as IIndexable
 
 		this.addTimeStamp(data)
 
-		this.id = id
+		indexable[this.primaryKey] = id
 		await setDoc(_doc, data)
 
 		if(!fireRelation) {
@@ -139,18 +142,13 @@ export default class FModel extends Model {
 	}
 
 	get hasRelationships() {
-		return (new HasRelationships(this))
+		return (new HasRelationships(this, this.primaryKey))
 	}
 
 	static query<T extends FModel>(this: new (data?: IIndexable) => T) {
 		const m = new this()
-		return new AlcQuery(this, query(m.query))
-	}
-
-	static where<T extends FModel>(this: new (data?: IIndexable) => T, fieldPath: string | FieldPath, opStr: WhereFilterOp, value: unknown) {
-		const w = where(fieldPath, opStr, value)
-		const m = new this()
-		return new AlcQuery(this, query(m.query, w))
+		const q = query(collection(m.db, m.table))
+		return new AlcQuery(this, q, m.primaryKey)
 	}
 
 	static async truncate<T extends FModel>(this: new (data?: IIndexable) => T) {
@@ -205,7 +203,7 @@ export default class FModel extends Model {
 
 	static paginate<T extends FModel>(this: new (data?: IIndexable) => T) {
 		const m = new this()
-		const q = new AlcQuery(this, query(m.query))
+		const q = new AlcQuery(this, query(collection(m.db, m.table)))
 		q.createPaginator()
 		return q
 	}
@@ -231,5 +229,13 @@ export default class FModel extends Model {
 
 	setDocument(_doc: DocumentData) {
 		this.document = _doc
+	}
+
+	get primaryKey() {
+		return this._primaryKey || 'id'
+	}
+
+	set primaryKey(val) {
+		this._primaryKey = val
 	}
 }

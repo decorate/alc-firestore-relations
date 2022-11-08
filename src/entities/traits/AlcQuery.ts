@@ -28,14 +28,16 @@ export default class AlcQuery<T extends FModel> {
 	withRelated: Array<string|{key: string, query: any, relation?: string}>
 	snapShot?: QueryDocumentSnapshot
 	paginator?: IPaginate<T>
+	primaryKey: string = ''
 	private queryLog: string[] = []
 	private documentLen: number = 0
 	private logStack: any[] = []
 
-	constructor(model: new (data?: IIndexable) => T, query: Query) {
+	constructor(model: new (data?: IIndexable) => T, query: Query, primaryKey: string = '') {
 		this.#query = query
 		this.model = model
 		this.withRelated = []
+		this.primaryKey = primaryKey
 	}
 
 	query() {
@@ -54,7 +56,7 @@ export default class AlcQuery<T extends FModel> {
 	}
 
 	async find(value: string) {
-		this.addQuery(where('id', '==', value))
+		this.addQuery(where(this.primaryKey, '==', value))
 		const res = await this.get()
 		if(res.length) {
 			return res[0]
@@ -123,6 +125,7 @@ export default class AlcQuery<T extends FModel> {
 		this.setQueryLog(this.#query)
 		const d = await getDocs(this.#query)
 		if(d.docs.length) {
+			this.documentLen = this.documentLen + d.docs.length
 			this.snapShot = d.docs[d.docs.length-1]
 		}
 		const data: T[] = []
@@ -266,9 +269,9 @@ export default class AlcQuery<T extends FModel> {
 			return
 		}
 		const q = query._query
-		let path = q.path.segments.join(',')
+		let path = q.path.segments.join('/')
 		let filter = q.filters.map((x: any) => {
-			const f = x.field.segments.join(',')
+			const f = x.field.segments.join('/')
 			const op = x.op
 			const v = x.value.stringValue
 			const a = `f:${f}${op}${v}`
@@ -279,7 +282,7 @@ export default class AlcQuery<T extends FModel> {
 		}
 		let order = q.explicitOrderBy.map((x: any) => {
 			const dir = x.dir
-			const f = x.field.segments.join(',')
+			const f = x.field.segments.join('/')
 			return `ob:${f}${dir}`
 		}).join(',')
 		if(order) {

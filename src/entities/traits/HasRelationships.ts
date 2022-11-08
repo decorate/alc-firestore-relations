@@ -14,7 +14,7 @@ import {
 	orderBy, OrderByDirection, limit, QueryDocumentSnapshot,
 } from '@firebase/firestore'
 import pluralize from 'pluralize'
-import { camelToSnake, snakeToCamel } from '@/utility/stringUtility'
+import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
 import { doc, setDoc } from 'firebase/firestore'
 import SimplePaginate from '@/entities/traits/SimplePaginate'
 import AlcQuery from '@/entities/traits/AlcQuery'
@@ -30,10 +30,12 @@ export default class HasRelationships<T extends FModel> {
 	subPath?: string
 	snapShot?: QueryDocumentSnapshot
 	paginator?: IPaginate<T>
+	_primaryKey: string = ''
 	private keys?: any
 
-	constructor(parent: FModel) {
+	constructor(parent: FModel, primaryKey:string = '') {
 		this.parent = parent
+		this._primaryKey = primaryKey
 	}
 
 	setQuery(path:string) {
@@ -90,10 +92,11 @@ export default class HasRelationships<T extends FModel> {
 			//return ''
 		}
 		return d.slice().reverse().filter((x, i) => i >= skip).map((x, i) => {
+			const data = x as IIndexable
 			if(!i) {
-				return `${x.table}/${x.id}`
+				return `${x.table}/${data[x.primaryKey]}`
 			}
-			return `/${x.tableName}/${x.id}`
+			return `/${x.tableName}/${data[x.primaryKey]}`
 		}).join('')
 	}
 
@@ -160,9 +163,9 @@ export default class HasRelationships<T extends FModel> {
 	getKeys(foreignKey?: string, localKey?: string, model?: FModel) {
 		if(!foreignKey) {
 			if(this.type === 'belongsTo') {
-				foreignKey = snakeToCamel(pluralize(model!.tableName || model!.constructor.name, 1)) + 'Id'
+				foreignKey = snakeToCamel(pluralize(model!.tableName || model!.constructor.name, 1)) + `${camelCase(this.primaryKey)}`
 			} else {
-				foreignKey = camelToSnake(pluralize(this.parent.tableName || this.parent.constructor.name, 1)) + '_id'
+				foreignKey = camelToSnake(pluralize(this.parent.tableName || this.parent.constructor.name, 1)) + `_${this.primaryKey}`
 			}
 		} else {
 			if(this.type === 'belongsTo') {
@@ -170,7 +173,11 @@ export default class HasRelationships<T extends FModel> {
 			}
 		}
 		if(!localKey) {
-			localKey = 'id'
+			if(this.type !== 'belongsTo') {
+				localKey = this.primaryKey
+			} else {
+				localKey = model!.primaryKey
+			}
 		}
 		return {
 			foreignKey,
@@ -205,7 +212,7 @@ export default class HasRelationships<T extends FModel> {
 			const d = new this.relatedModel!(Object.assign(res.docs[0].data(), data.getPostable()))
 			await d.save()
 		} else {
-			data.update({[this.keys.foreignKey!]: this.parent.id})
+			data.update({[this.keys.foreignKey!]: p[this.keys.localKey]})
 			await data.save()
 		}
 	}
@@ -216,22 +223,24 @@ export default class HasRelationships<T extends FModel> {
 			data.update({[this.keys.localKey]: p[this.keys.foreignKey!]})
 		}
 		const res = await data.save()
-		this.parent.update({[this.keys.foreignKey!]: res.id})
+		const r = res as IIndexable
+		this.parent.update({[this.keys.foreignKey!]: r[this.keys.localKey]})
 		await this.parent.save(false)
 	}
 
 	async hasManySave(data: T|T[]) {
 		const keys = this.getKeys()
+		const p = this.parent as IIndexable
 		if(Array.isArray(data)) {
 			await Promise.all(data.map(async x => {
-				x.update({[keys.foreignKey!]: this.parent.id})
+				x.update({[keys.foreignKey!]: p[this.keys.localKey]})
 				await x.save()
 				return x
 			}))
 			return
 		}
 
-		data.update({[keys.foreignKey!]: this.parent.id})
+		data.update({[keys.foreignKey!]: p[this.keys.localKey]})
 		await data.save()
 	}
 
@@ -281,5 +290,9 @@ export default class HasRelationships<T extends FModel> {
 			return
 		}
 		await relation.save(source[bindKey])
+	}
+
+	get primaryKey() {
+		return this._primaryKey || 'id'
 	}
 }

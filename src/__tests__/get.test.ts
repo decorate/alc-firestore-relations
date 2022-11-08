@@ -15,6 +15,10 @@ import Test from '@/entities/Test'
 import Info from '@/entities/Info'
 import PresidentDetail from '@/entities/PresidentDetail'
 import Pref from '@/entities/Pref'
+import Model from '@/entities/Model'
+import Child from '@/entities/Child'
+import ModelDetail from '@/entities/ModelDetail'
+import Target from '@/entities/Target'
 config.prefix = 'jest_'
 
 async function clearDb() {
@@ -26,13 +30,19 @@ async function clearDb() {
 		'jest_president_details',
 		'jest_addresses',
 		'jest_tests',
-		'jest_pref'
+		'jest_pref',
+		'jest_model',
+		'jest_models',
+		'jest_child',
+		'jest_model_detail',
+		'jest_targets'
 	].map(async x => {
 		await axios.delete(`http://localhost:9092/emulator/v1/projects/test/databases/(default)/documents/${x}`)
 	}))
 }
 
 describe('firestore test', () => {
+	let isClear = true
 	beforeAll( () => {
 		new SetUpFirestore(config)
 	})
@@ -44,7 +54,9 @@ describe('firestore test', () => {
 	})
 
 	afterEach(() => {
-		return clearDb()
+		if(isClear) {
+			return clearDb()
+		}
 	})
 
 	test('update sub collection', async () => {
@@ -192,28 +204,28 @@ describe('firestore test', () => {
 
 	test('all relation save', async () => {
 		await new Restaurant({
-			id: 'test',
+			id: 'A',
 			name: 'test',
 			addresses: [
 				new Address({
-					address: 'ad',
+					address: 'A+',
 					pref: [
 						new Pref({
-							text: 'ok pref',
+							text: 'A++',
 							tests: [
 								new Test({
-									text: 'ok test',
-									infos: [new Info({})]
+									text: 'A+++',
+									infos: [new Info({text: 'A++++'})]
 								})
 							]
 						}),
-						new Pref({text: 'ok pref2'})
+						new Pref({text: 'B++'})
 					],
 				})
 			],
-			detail: new RestaurantDetail(),
-			president: new President({detail: new PresidentDetail()}),
-			reviews: [new Review()]
+			detail: new RestaurantDetail({email: 'A@mail.com'}),
+			president: new President({name: 'A#', detail: new PresidentDetail({tel: 'A##'})}),
+			reviews: [new Review({title:'A&'})]
 		}).save()
 
 		let r = await Restaurant.query()
@@ -221,18 +233,23 @@ describe('firestore test', () => {
 			.with(['_addresses._pref._tests._infos'])
 			.with(['_president._detail'])
 			.with(['_reviews'])
-			.find('test')
+			.find('A')
 
 		r = r!
 
 		expect(r.reviews?.length).toBe(1)
+		expect(r.reviews.map(x => x.title).join(',')).toBe('A&')
 		expect(r.addresses?.length).toBe(1)
+		expect(r.addresses.map(x => x.address).join(',')).toBe('A+')
 		expect(r.addresses![0].pref.length).toBe(2)
-		const pref = r.addresses![0].pref!.filter(x => x.text == 'ok pref')[0]
+		expect(r.addresses![0].pref.map(x => x.text).sort().join(',')).toBe('A++,B++')
+		const pref = r.addresses![0].pref!.filter(x => x.text == 'A++')[0]
 		expect(pref.tests.length).toBe(1)
+		expect(pref.tests.map(x => x.text).join(',')).toBe('A+++')
 		expect(pref.tests![0].infos.length).toBe(1)
-		expect(r.president?.id).not.toBeNull()
+		expect(r.president?.id).not.toBe('')
 		expect(r.president!.detail.id).toBe(r.president!.detailId)
+		expect(r.president.detail.tel).toBe('A##')
 	})
 
 	test('with in query', async () => {
@@ -397,7 +414,7 @@ describe('firestore test', () => {
 		expect(r!.addresses.map(x => x.address).join(',')).toBe('B,A')
 		expect(r!.addresses[1].address).toBe('A')
 		expect(r!.addresses[1].pref.length).toBe(2)
-		expect(r!.addresses[1].pref.map(x => x.text).join(',')).toBe('A+,B+')
+		expect(r!.addresses[1].pref.map(x => x.text).sort().join(',')).toBe('A+,B+')
 		expect(r!.addresses[0].pref.length).toBe(0)
 
 	})
@@ -428,5 +445,131 @@ describe('firestore test', () => {
 		expect(r!.reviews[1].title).toBe('B')
 		expect(r!.reviews[1].tests.length).toBe(2)
 		expect(r!.reviews[1].tests.map(x => x.text).sort().join(',')).toBe('B+,C+')
+	})
+
+	test('primary key belongsTo change ok', async () => {
+		const m = await new Model({
+			uid: 'A',
+			detail: new RestaurantDetail({tel: '09011112222', email: 'test@mail.com'}),
+		}).save()
+
+		const r = await Model.query()
+		.with(['_detail'])
+		.find('A')
+
+		expect(r!.uid).toBe('A')
+		expect(r!.detailId).toBe(r!.detail.id)
+		expect(r!.detail.tel).toBe('09011112222')
+	})
+
+	test('primary key belongsTo side change ok', async () => {
+		const m = await new Model({
+			uid: 'A',
+			modelDetail: new ModelDetail({text: 'A+'})
+		}).save()
+
+		const r = await Model.query()
+		.with(['_modelDetail'])
+		.find('A')
+
+		expect(r!.uid).toBe('A')
+		expect(r!.modelDetailId).not.toBe('')
+		expect(r!.modelDetailId).toBe(r!.modelDetail.uid)
+		expect(r!.modelDetail.text).toBe('A+')
+	})
+
+	test('primary key hasMany change ok', async () => {
+		const m = await new Model({
+			uid: 'A',
+			child: [
+				new Child({text: 'A'}),
+				new Child({text: 'B'}),
+			]
+		}).save()
+
+		const r = await Model.query()
+		.with(['_child'])
+		.find('A')
+
+		expect(r!.uid).toBe('A')
+		expect(r!.child.length).toBe(2)
+		expect(r!.child.map(x => x.text).sort().join(',')).toBe('A,B')
+	})
+
+	test('primary key hasMany side change ok', async () => {
+		const m = await new Model({
+			uid: 'A',
+			targets: [
+				new Target({text: 'A'}),
+				new Target({text: 'B'}),
+			]
+		}).save()
+
+		const r = await Model.query()
+		.with(['_targets'])
+		.find('A')
+
+		expect(r!.uid).toBe('A')
+		expect(r!.targets.length).toBe(2)
+		expect(r!.targets.map(x => x.text).sort().join(',')).toBe('A,B')
+	})
+
+	test('primary key hasManySub change ok', async () => {
+		const m = await new Model({
+			uid: 'A',
+			addresses: [
+				new Address({address: 'A'}),
+				new Address({address: 'B'}),
+			]
+		}).save()
+
+		const r = await Model.query()
+		.with(['_addresses'])
+		.find('A')
+
+		expect(r!.uid).toBe('A')
+		expect(r!.addresses.length).toBe(2)
+		expect(r!.addresses.map(x => x.address).sort().join(',')).toBe('A,B')
+	})
+
+	test('toQuery test', async () => {
+		await new Restaurant({
+			id: 'A',
+			name: 'test',
+			addresses: [
+				new Address({
+					address: 'A+',
+					pref: [
+						new Pref({
+							text: 'A++',
+							tests: [
+								new Test({
+									text: 'A+++',
+									infos: [new Info({text: 'A++++'})]
+								})
+							]
+						}),
+						new Pref({text: 'B++'})
+					],
+				})
+			],
+			detail: new RestaurantDetail({email: 'ok@mail.com'}),
+			president: new President({name: 'A#',detail: new PresidentDetail({tel: 'ok'})}),
+			reviews: [new Review({text: 'A&'}), new Review({text: 'B&'})]
+		}).save()
+
+		const r = Restaurant.query()
+			.with(['_addresses._pref._tests._infos'])
+			.with(['_detail'])
+			.with(['_president._detail'])
+			.with(['_reviews'])
+
+		const res = await r.find('A')
+		const q = r!.toQuery()
+		expect(res!.president.id).not.toBe('')
+		expect(res!.president.detail.id).not.toBe('')
+		expect(q.log.documentLen).toBe(11)
+		expect(q.documentAll).toBe(11)
+
 	})
 })
