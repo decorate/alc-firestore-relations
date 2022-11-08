@@ -93,10 +93,10 @@ export default class HasRelationships<T extends FModel> {
 		}
 		return d.slice().reverse().filter((x, i) => i >= skip).map((x, i) => {
 			const data = x as IIndexable
-			if(!i) {
-				return `${x.table}/${data[x.primaryKey]}`
-			}
-			return `/${x.tableName}/${data[x.primaryKey]}`
+			// if(!i) {
+			// 	return `${x.table}/${data[x.primaryKey]}`
+			// }
+			return `/${x.table}/${data[x.primaryKey]}`
 		}).join('')
 	}
 
@@ -170,6 +170,9 @@ export default class HasRelationships<T extends FModel> {
 		} else {
 			if(this.type === 'belongsTo') {
 				foreignKey = snakeToCamel(foreignKey) || foreignKey
+			}
+			if(this.type === 'hasManySub' && window.alcPrefix) {
+				foreignKey = window.alcPrefix + foreignKey
 			}
 		}
 		if(!localKey) {

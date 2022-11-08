@@ -573,8 +573,4 @@ describe('firestore test', () => {
 
 	})
 
-	test.only('test', () => {
-		const r = new Model({text: 'A'})
-		console.log(r.sender)
-	})
 })

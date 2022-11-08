@@ -211,7 +211,10 @@ export default class AlcQuery<T extends FModel> {
 					if(parentType && relation.type != parentType) {
 						skip = 1
 					}
-					const path = relation.getPath(relation.parent, [], skip) + `/${propertyName}`
+					let path = relation.getPath(relation.parent, [], skip) + `/${propertyName}`
+					if(window.alcPrefix) {
+						path = relation.getPath(relation.parent, [], skip) + `/${window.alcPrefix}${propertyName}`
+					}
 					relation.setQuery(path)
 					relation.subPath = path
 				}
