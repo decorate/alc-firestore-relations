@@ -34,6 +34,9 @@ class User extends Model {
 
   constructor(data?: IIndextable) {  
 	 super()         
+	 //change access primary key
+	 this.primaryKey = 'uid'
+	 
 	 this.fillable = FILLABLE 
 	 //presents is send even if the field is empty 
 	 this.presents = ['type']  
@@ -56,6 +59,14 @@ class User extends Model {
     
     _userComments() {
 		return this.hasRelationships.hasManySub(Comment, 'user_comments')
+    }
+    
+    _anyHasOne() {
+        return this.hasRelationships.hasOne(Any)
+    }
+    
+    _anyBelongsTo() {
+        return this.hasRelationships.beongsTo(Any)
     }
 }  
 ```  
@@ -91,6 +102,9 @@ export default {
          expect(this.user.name).toBe('test-user')
          expect(this.user.posts.length).toBe(2)
          expect(this.user.userComments.length).toBe(2)
+         
+         const posts = this.user._posts().get()
+         expect(posts.length).toBe(2)
      },
 
      async post() {
@@ -117,7 +131,7 @@ export default {
 | afterPostable | res | Called after sending api
 
 ### Model Methods
-|methods|args  | output|
-|--|--|--|
-| getPostable |null  | Object|
-|update|Object|null|
+|methods|args|output
+|:---|----|---:
+| getPostable |null|Object
+|update|Object|null

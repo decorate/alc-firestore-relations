@@ -171,6 +171,13 @@ describe('firestore test', () => {
 		expect(r?.reviews?.length).toBe(4)
 		const res = r!.reviews.map(x => x.title).sort().join(',')
 		expect(res).toBe('A,B,C,D')
+
+		const v = r!.reviews[0]
+		v.update({title: 'A+'})
+		await v.save()
+		r = await Restaurant.query().with(['_reviews']).find('test')
+		expect(r!.reviews[0].title).toBe('A+')
+		expect(r!.reviews.length).toBe(4)
 	})
 
 	test('hasOne save', async () => {
@@ -575,7 +582,7 @@ describe('firestore test', () => {
 
 	test('get collectionGroup', async () => {
 		await new Restaurant({
-			id: 'A', 'text': 'AA',
+			id: 'A', text: 'AA',
 			reviews: [
 				new Review({id: 'A+', title: 'A++'}),
 				new Review({id: 'B+', title: 'B++'}),
