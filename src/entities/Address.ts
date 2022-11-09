@@ -26,6 +26,6 @@ export default class Address extends FModel {
 	}
 
 	_pref() {
-		return this.hasRelationships.hasManySub(Pref, `pref`)
+		return this.hasRelationships.hasManySub(Pref, `pref`).orderBy('text', 'desc')
 	}
 }

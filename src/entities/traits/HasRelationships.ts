@@ -11,7 +11,7 @@ import {
 	FieldPath,
 	QueryConstraint,
 	WhereFilterOp,
-	orderBy, OrderByDirection, limit, QueryDocumentSnapshot,
+	orderBy, OrderByDirection, limit, QueryDocumentSnapshot
 } from '@firebase/firestore'
 import pluralize from 'pluralize'
 import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
@@ -39,8 +39,10 @@ export default class HasRelationships<T extends FModel> {
 	}
 
 	setQuery(path:string) {
+		const oldQuery = Object.assign({}, this.query)
 		const colRef = collection(window.alcDB, path)
 		this.query = query(colRef)
+		this.setConstraint(oldQuery)
 		return this
 	}
 
@@ -53,6 +55,31 @@ export default class HasRelationships<T extends FModel> {
 			this.query = query(this.query!, _query)
 		}
 		return this
+	}
+
+	setConstraint(oldQuery: any) {
+		if(!oldQuery) {
+			return
+		}
+		if(!oldQuery._query) {
+			return
+		}
+		const query = oldQuery._query
+		const constraint:QueryConstraint[] = []
+		query.explicitOrderBy.map((x:any) => {
+			const o = orderBy(x.field.segments.join(','), x.dir)
+			constraint.push(o)
+		})
+		query.filters.map((x: any) => {
+			const f = x.field.segments.join('/')
+			let v = x.value.stringValue
+			if(!v) {
+				v = x.value.arrayValue?.values?.map((d: any) => d.stringValue)
+			}
+			const w = where(f, x.op, v)
+			constraint.push(w)
+		})
+		this.addQuery(constraint)
 	}
 
 	hasMany(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {

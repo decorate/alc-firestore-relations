@@ -380,9 +380,9 @@ describe('firestore test', () => {
 		await new Restaurant({
 			id: 'test',
 			addresses: [
-				new Address({address: '新小岩', pref: [new Pref()]})
+				new Address({address: '新小岩', pref: [new Pref({text: 'A'})]})
 			],
-			detail: new RestaurantDetail()
+			detail: new RestaurantDetail({tel: 'A+'})
 		}).save()
 
 		const r = await Restaurant.query()
@@ -596,6 +596,35 @@ describe('firestore test', () => {
 
 		const r = await q.get()
 		expect(r.map(x => x.id).sort().join(',')).toBe('A+,C+')
+	})
+
+	test('hasManySub relation orderBy', async () => {
+		await new Model({
+			uid: 'A',
+			addresses: [
+				new Address({address: 'A+'}),
+				new Address({
+					address: 'B+',
+					pref: [
+						new Pref({text: 'A++'}),
+						new Pref({text: 'B++'}),
+						new Pref({text: 'C++'}),
+						new Pref({text: 'D++'}),
+					]
+				}),
+				new Address({address: 'C+'}),
+				new Address({address: 'D+'}),
+			]
+		}).save()
+
+		const q = Model.query().with(['_addresses._pref'])
+		const r = await q.find('A')
+		expect(r!.addresses.length).toBe(4)
+		expect(r!.addresses.map(x => x.address).join(',')).toBe('D+,C+,B+,A+')
+		expect(r!.addresses.filter(x => x.pref.length).map(x => x.address).join(',')).toBe('B+')
+		const a = r!.addresses.filter(x => x.pref.length)
+		expect(a[0].pref.length).toBe(4)
+		expect(a[0].pref.map(x => x.text).join(',')).toBe('D++,C++,B++,A++')
 	})
 
 })

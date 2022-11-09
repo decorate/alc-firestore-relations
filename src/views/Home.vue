@@ -7,7 +7,11 @@
         {{data.name}}<br/>
         詳細:{{data.detail.email}}/{{data.detail.tel}}<br/>
         レビュー数:{{data.reviews.length}}件<br/>
+        レビュー:{{data.reviews.map(x => x.title).join(',')}}<br/>
         住所: {{data.addresses.map(x => x.address).join(',')}}<br/>
+        Pref: {{data.addresses.map(x => x.pref.map(v => v.text).join(',')).join('|')}}<br/>
+        Test: {{data.addresses.map(x => x.pref.map(v => v.tests.map(d => d.text).join(',')).join('/')).join('|')}}<br/>
+        Info: {{data.addresses.map(x => x.pref.map(v => v.tests.map(d => d.infos.map(r => r.body).join(',')).join(';')).join('/')).join('|')}}<br/>
         社長: {{data.president.name}}/{{data.president.detail.tel}}
       </li>
     </ul>
@@ -77,7 +81,7 @@ export default {
           //     ]
           //   }, relation: '_pref._tests'}])
           .with(['_president._detail'])
-          // .orderBy('id', 'asc')
+          .orderBy('created_at', 'desc')
       //.limit(1)
       .simplePaginate(1)
 

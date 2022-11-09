@@ -57,6 +57,6 @@ export default class Model extends FModel {
 	}
 
 	_addresses() {
-		return this.hasRelationships.hasManySub(Address, 'addresses')
+		return this.hasRelationships.hasManySub(Address, 'addresses').orderBy('address', 'desc')
 	}
 }

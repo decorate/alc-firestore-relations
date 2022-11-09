@@ -122,16 +122,41 @@ export default {
 ```
 
 
+### Overridable Property
+|property|type
+|:---|---:
+|primaryKey|string
+
+### Overridable Function  
   
-### Overridable Property  
-  
-| methods |value  |description|
-|--|--|--|
+| methods |value|description
+|:---|---|---:
 | beforePostable | null | Called before sending api
 | afterPostable | res | Called after sending api
 
 ### Model Methods
-|methods|args|output
-|:---|----|---:
+|methods|args|output|type
+|:---|----|---|---:
 | getPostable |null|Object
 |update|Object|null
+|save|null|this|static
+|query|null|AlcQuery|static
+|collectionGroup|null|AlcQuery|static
+|paginate|null|IPagenate|static
+|hasRelationships|null|HasRelationships
+
+### AlcQuery Methods
+|methods|args|output
+|:---|---|---:
+|find|string|FModel?
+|first|null|FModel?
+|get|null|FModel[]
+|with|Array<string or {key: string, query: any, relation?: string}>|AlcQuery
+|where||
+|limit||
+|orderBy||
+|startAt||
+|startAfter||
+|endAt||
+|endAfter||
+|toQuery|null|{log, stack, documentAll}|

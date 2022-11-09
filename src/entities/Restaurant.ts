@@ -69,14 +69,14 @@ export default class Restaurant extends FModel {
 					})
 				})
 
-				const addresses = this.randomArr(1).map(x => {
-					const pref = this.randomArr(1).map(v => {
-						const infos = this.randomArr(1).map(k => {
+				const addresses = this.randomArr(3).map(x => {
+					const pref = this.randomArr(3).map(v => {
+						const infos = this.randomArr(3).map(k => {
 							return new Info({
 								body: faker.random.words()
 							})
 						})
-						const tests = this.randomArr(1).map(k => {
+						const tests = this.randomArr(3).map(k => {
 							return new Test({
 								text: faker.random.word(),
 								infos
@@ -109,6 +109,7 @@ export default class Restaurant extends FModel {
 					addresses: addresses
 				}).save()
 			}))
+		console.log('ok seed!')
 	}
 
 	static randomArr(max :number) {
