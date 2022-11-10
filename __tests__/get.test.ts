@@ -627,4 +627,61 @@ describe('firestore test', () => {
 		expect(a[0].pref.map(x => x.text).join(',')).toBe('D++,C++,B++,A++')
 	})
 
+	test('hasManySub in sub with in query orderBy correct data', async () => {
+		await new Restaurant({
+			id: 'A',
+			name: 'test1',
+			addresses: [
+				new Address({address: 'A', pref: [
+						new Pref({text: 'A+', tests: [
+								new Test({text: 'A++', infos: [new Info({text: 'A+++'})]}),
+								new Test({text: 'B++'}),
+							]}),
+						new Pref({text: 'B+'})
+					]}),
+				new Address({address: 'B'}),
+			]
+		}).save()
+
+		const q = Restaurant.query()
+		.with([{key: '_addresses._pref._tests', relation: '_infos', query: () => {
+				return [orderBy('text', 'desc')]
+			}}])
+		const r = await q.find('A')
+
+		expect(r!.addresses.length).toBe(2)
+		expect(r!.addresses[0].pref.length).toBe(2)
+		const pref = r!.addresses[0].pref.filter(x => x.text == 'A+')
+		expect(pref[0].tests.length).toBe(2)
+		expect(pref[0].tests.map(x => x.text).join(',')).toBe('B++,A++')
+		expect(pref[0].tests[1].infos.length).toBe(1)
+		expect(q.toQuery().log.documentLen).toBe(8)
+
+	})
+
+	test.only('hasMany in sub with in query orderBy correct data', async () => {
+		await new Restaurant({
+			id: 'A',
+			name: 'test1',
+			reviews: [
+				new Review({title: 'A+', tests: [
+						new Test({text: 'A++'}),
+						new Test({text: 'B++'}),
+					]}),
+				new Review({title: 'B+'})
+			]
+		}).save()
+
+		const q = Restaurant.query()
+		.with([{key: '_reviews._tests', query: () => {
+				return [orderBy('text', 'desc')]
+			}}])
+		const r = await q.find('A')
+
+		expect(r!.reviews.length).toBe(2)
+		expect(r!.reviews[0].tests.length).toBe(2)
+		expect(r!.reviews[0].tests.map(x => x.text).join(',')).toBe('B++,A++')
+
+	})
+
 })

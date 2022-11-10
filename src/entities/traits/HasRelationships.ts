@@ -276,7 +276,7 @@ export default class HasRelationships<T extends FModel> {
 
 	async hasManySubSave(data: T|T[]) {
 		if(Array.isArray(data)) {
-			data.map(async x => {
+			await Promise.all(data.map(async x => {
 				const col = collection(window.alcDB, this.subPath!)
 				let d = doc(col)
 				x.update({id: x.id || `${x.idPrefix}${d.id}`})
@@ -293,7 +293,7 @@ export default class HasRelationships<T extends FModel> {
 						}
 					}
 				}))
-			})
+			}))
 			return
 		}
 		const col = collection(window.alcDB, this.subPath!)

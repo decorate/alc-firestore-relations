@@ -22,6 +22,16 @@ import { markRaw } from 'vue'
 import { doc } from 'firebase/firestore'
 import Restaurant from '@/entities/Restaurant'
 
+type WithQuery = {
+	key: string,
+	query: () => QueryConstraint|QueryConstraint[],
+	relation?: string
+}
+
+type WithQueryConvert = WithQuery & {
+	queryTarget: string
+}
+
 export default class AlcQuery<T extends FModel> {
 	#query: Query
 	model: new (data?: IIndexable) => T
@@ -49,7 +59,7 @@ export default class AlcQuery<T extends FModel> {
 		return this
 	}
 
-	with(related: Array<string|{key: string, query: any, relation?: string}>) {
+	with(related: Array<string|WithQuery>) {
 		related.map(x => this.withRelated.push(x))
 		this.withRelated = [...new Set(this.withRelated)]
 		return this
@@ -136,49 +146,9 @@ export default class AlcQuery<T extends FModel> {
 			await Promise.all(this.withRelated.map(async v => {
 				if(typeof v == 'string') {
 					const relatedName = this.getRelatedName(v)
-					const model = m as IIndexable
-					if(model[v] instanceof Function) {
-						const relation = await model[v]()
-
-						this.setQueryLog(relation?.query)
-
-						const res = await relation.get()
-						this.documentLen = this.documentLen+res.length
-						if(relation.type === 'hasMany' || relation.type === 'hasManySub') {
-							m.setValueByKey(relatedName, res)
-						}
-						if((relation.type === 'belongsTo' || relation.type === 'hasOne') && res.length) {
-							m.setValueByKey(relatedName, res[0])
-						}
-					}
-
-					if(/\./.test(relatedName)) {
-						await this.setRelations(m, [m], relatedName)
-					}
+					await this.setRelations(m, [m], relatedName)
 				} else {
-					const relatedName = v.key.replace(/\_/g, '')
-					const relatedQuery = v.query
-					const model = m as IIndexable
-					if(model[v.key] instanceof Function) {
-						const relation = await model[v.key]()
-
-						relation.addQuery(relatedQuery())
-
-						this.setQueryLog(relation?.query)
-						const res = await relation.get()
-						this.documentLen = this.documentLen+res.length
-						if(relation.type === 'hasMany' || relation.type === 'hasManySub') {
-							m.setValueByKey(relatedName, res)
-						}
-						if((relation.type === 'belongsTo' || relation.type === 'hasOne') && res.length) {
-							m.setValueByKey(relatedName, res[0])
-						}
-
-						if(v.relation) {
-							const relatedNameSub = v.relation.replace(/\_/g, '')
-							await this.setRelations(m, res, relatedNameSub, 0, `${relatedName}`)
-						}
-					}
+					await this.setRelationsQuery(m, [m], v)
 				}
 
 			}))
@@ -187,7 +157,7 @@ export default class AlcQuery<T extends FModel> {
 		return data
 	}
 
-	async setRelations(parent: T, roots: T[], relatedName: string, parentIndex: number = 0, targetKey: string = '', parentType: string = '') {
+	async setRelations(parent: T, roots: T[], relatedName: string, parentIndex: number = 0, targetKey: string = '', parentType: string = '', withQuery?: WithQueryConvert) {
 		await Promise.all(
 			roots.map(async (x, i) => {
 				const propertyName = this.getRelatedName(relatedName, parentIndex)
@@ -195,7 +165,7 @@ export default class AlcQuery<T extends FModel> {
 				const model = x as IIndexable
 
 				if(model[funcName] == undefined) return
-				const relation = model[funcName]()
+				const relation = model[funcName]() as HasRelationships<T>
 
 				let key = propertyName
 				if(targetKey && propertyName) {
@@ -218,7 +188,9 @@ export default class AlcQuery<T extends FModel> {
 					relation.setQuery(path)
 					relation.subPath = path
 				}
-
+				if(funcName === withQuery?.queryTarget) {
+					relation.addQuery(withQuery.query())
+				}
 				this.setQueryLog(relation?.query)
 				const res = await relation.get()
 				this.documentLen = this.documentLen+res.length
@@ -230,8 +202,38 @@ export default class AlcQuery<T extends FModel> {
 					} else {
 						parent.setValueByKey(key, res[0])
 					}
-					await this.setRelations(parent, res, relatedName, parentIndex + 1, key, relation.type)
+					if(funcName === withQuery?.queryTarget) {
+						if(withQuery.relation) {
+							await this.setRelations(parent, res, withQuery.relation, 0, key, relation.type, withQuery)
+						}
+					} else {
+						await this.setRelations(parent, res, relatedName, parentIndex + 1, key, relation.type, withQuery)
+					}
 				}
+			})
+		)
+	}
+
+	async brigeSetRelations(parent:T, roots:T[], related: WithQueryConvert) {
+		await this.setRelations(parent, roots, related.key, 0, '', '', related)
+	}
+
+	async setRelationsQuery(parent: T, roots: T[], related: WithQuery, parentIndex: number = 0, targetKey: string = '', parentType: string = '') {
+		if(!parentIndex) {
+			const propertyName = this.getRelatedNameConvert(related)
+			await this.brigeSetRelations(parent, roots, propertyName)
+			return
+		}
+		await Promise.all(
+			roots.map(async (x, i) => {
+
+				// if(!propertyName.query) {
+				// 	await this.setRelations(parent, roots, accessKey)
+				// 	return
+				// }
+				// const model = x as IIndexable
+				// if(model[accessKey] === undefined) return
+				// const relation = await model[accessKey]() as HasRelationships<T>
 			})
 		)
 	}
@@ -243,6 +245,25 @@ export default class AlcQuery<T extends FModel> {
 		}
 
 		return r.split('.')[index]
+	}
+
+	getRelatedNameConvert(val: WithQuery) {
+		const s = val.key.split('.')
+		return {
+			key: val.key,
+			queryTarget: s[s.length -1],
+			query: val.query,
+			relation: val.relation
+		}
+	}
+
+	getRelatedNameInQuery(val: WithQuery, index: number) {
+		const r = val.key.replace(/\_/g, '')
+		const s = r.split('.')
+		if((s.length - 1) == index) {
+			return {key: s[index], query: val.query, relation: val.relation}
+		}
+		return {key: s[index], query: undefined, relation: undefined}
 	}
 
 

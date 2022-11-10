@@ -11,7 +11,7 @@ With yarn:
   
 #### Model create  
 ```typescript  
-import {Model, ArrayMappable} from '@team-decorate/alcts'  
+import {FModel} from '@team-decorate/alc-firesore-reations'  
 import Post from './models/Post'  
 import Comment from './models/Comment'  
   
@@ -22,7 +22,7 @@ const FILLABLE = [
  'id', 'name', 'email', 'password', 'type'
  ]  
   
-class User extends Model {  
+class User extends FModel {  
 
   id: number = 0
   name: string = ''
