@@ -659,7 +659,7 @@ describe('firestore test', () => {
 
 	})
 
-	test.only('hasMany in sub with in query orderBy correct data', async () => {
+	test('hasMany in sub with in query orderBy correct data', async () => {
 		await new Restaurant({
 			id: 'A',
 			name: 'test1',
@@ -673,7 +673,7 @@ describe('firestore test', () => {
 		}).save()
 
 		const q = Restaurant.query()
-		.with([{key: '_reviews._tests', query: () => {
+		.with([{key: 'reviews.tests', query: () => {
 				return [orderBy('text', 'desc')]
 			}}])
 		const r = await q.find('A')
