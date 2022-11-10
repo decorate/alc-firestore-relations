@@ -1,6 +1,6 @@
 {
   "name": "@team-decorate/alc-firestore-relations",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "main": "dist/index.d.ts",
   "types": "dist/index.d.ts",
   "files": [
@@ -79,8 +79,7 @@
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1"
     },
-    "transformIgnorePatterns": [
-    ],
+    "transformIgnorePatterns": [],
     "testEnvironment": "node",
     "globals": {
       "window": {}
