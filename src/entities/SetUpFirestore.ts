@@ -3,7 +3,7 @@ import {
 	getFirestore,
 	connectFirestoreEmulator
 } from 'firebase/firestore'
-import {IFirestoreConfig} from './interfaces/IFirestoreConfig'
+import {IFirestoreConfig} from '../interfaces/IFirestoreConfig'
 
 export class SetUpFirestore {
 
