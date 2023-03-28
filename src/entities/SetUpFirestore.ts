@@ -1,11 +1,9 @@
 import {initializeApp} from 'firebase/app'
 import {
 	getFirestore,
-	doc,
-	setDoc,
 	connectFirestoreEmulator
 } from 'firebase/firestore'
-import {IFirestoreConfig} from '@/interfaces/IFirestoreConfig'
+import {IFirestoreConfig} from './interfaces/IFirestoreConfig'
 
 export class SetUpFirestore {
 

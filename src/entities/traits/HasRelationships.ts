@@ -1,10 +1,10 @@
-import { Model } from '@team-decorate/alcts/dist/index'
-import FModel from '@/FModel'
+import FModel from '../../FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
 import {
+	doc,
+	setDoc,
 	query,
 	getDocs,
-	updateDoc,
 	where,
 	Query,
 	collection,
@@ -14,11 +14,10 @@ import {
 	orderBy, OrderByDirection, limit, QueryDocumentSnapshot
 } from '@firebase/firestore'
 import pluralize from 'pluralize'
-import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
-import { doc, setDoc } from 'firebase/firestore'
-import SimplePaginate from '@/entities/traits/SimplePaginate'
-import AlcQuery from '@/entities/traits/AlcQuery'
-import { IPaginate } from '@/interfaces/IPaginate'
+import { camelCase, camelToSnake, snakeToCamel } from '../../utility/stringUtility'
+import SimplePaginate from '../../entities/traits/SimplePaginate'
+import { IPaginate } from '../../interfaces/IPaginate'
+import { WithQuery } from '../../interfaces/AlcTypes'
 
 type RelatedType = 'hasMany' | 'belongsTo' | 'hasOne' | 'hasManySub'
 
@@ -79,6 +78,10 @@ export default class HasRelationships<T extends FModel> {
 			const w = where(f, x.op, v)
 			constraint.push(w)
 		})
+		if(query.limit) {
+			const l = limit(query.limit)
+			constraint.push(l)
+		}
 		this.addQuery(constraint)
 	}
 
@@ -112,21 +115,6 @@ export default class HasRelationships<T extends FModel> {
 		return this
 	}
 
-	getPath(parent?: FModel, d:FModel[] = [], skip:number = 0) {
-		if(parent) {
-			d.push(parent)
-			this.getPath(parent?.parent, d)
-			//return ''
-		}
-		return d.slice().reverse().filter((x, i) => i >= skip).map((x, i) => {
-			const data = x as IIndexable
-			// if(!i) {
-			// 	return `${x.table}/${data[x.primaryKey]}`
-			// }
-			return `/${x.table}/${data[x.primaryKey]}`
-		}).join('')
-	}
-
 	belongsTo(related: {new (data: IIndexable): T}, foreignKey?: string, localKey?: string) {
 		this.type = 'belongsTo'
 		const model = new related({})
@@ -149,6 +137,21 @@ export default class HasRelationships<T extends FModel> {
 		const p = this.parent as IIndexable
 		this.query = query(colRef, where(keys.foreignKey!, '==', p[keys.localKey]))
 		return this
+	}
+
+	belongsToMany(related: new (data?: IIndexable) => T, table: string = '', foreignPivotKey: string = '', relatedPivotKey: string = '') {
+
+	}
+
+	getPath(parent?: FModel, d:FModel[] = [], skip:number = 0) {
+		if(parent) {
+			d.push(parent)
+			this.getPath(parent?.parent, d)
+		}
+		return d.slice().reverse().filter((x, i) => i >= skip).map((x, i) => {
+			const data = x as IIndexable
+			return `/${x.table}/${data[x.primaryKey]}`
+		}).join('')
 	}
 
 	simplePaginate(limit = 15) {

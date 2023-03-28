@@ -53,18 +53,22 @@ class User extends FModel {
 	}
     }
     
+    // 1:n relation
     _posts() {
 		return this.hasRelationships.hasMany(Post)
     }
     
+    // 1 in subCollection relation
     _userComments() {
 		return this.hasRelationships.hasManySub(Comment, 'user_comments')
     }
     
+    // 1:1 relation
     _anyHasOne() {
         return this.hasRelationships.hasOne(Any)
     }
     
+    // 1:1 relation
     _anyBelongsTo() {
         return this.hasRelationships.beongsTo(Any)
     }

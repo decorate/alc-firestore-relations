@@ -1,4 +1,5 @@
 import {
+	doc,
 	FieldPath,
 	Query,
 	WhereFilterOp,
@@ -12,25 +13,22 @@ import {
 	QuerySnapshot, QueryConstraint,
 	QueryDocumentSnapshot, collection, startAfter, DocumentSnapshot, endBefore, startAt, endAt, DocumentData,
 } from '@firebase/firestore'
-import FModel from '@/FModel'
+import FModel from '../../FModel'
 import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
-import HasRelationships from '@/entities/traits/HasRelationships'
-import SimplePaginate from '@/entities/traits/SimplePaginate'
-import firebase from 'firebase/compat'
-import { IPaginate } from '@/interfaces/IPaginate'
-import { markRaw } from 'vue'
-import { doc } from 'firebase/firestore'
-import Restaurant from '@/entities/Restaurant'
+import HasRelationships from '../../entities/traits/HasRelationships'
+import SimplePaginate from '../../entities/traits/SimplePaginate'
+import { IPaginate } from '../../interfaces/IPaginate'
+import {WithQuery, WithQueryConvert} from '../../interfaces/AlcTypes'
 
-type WithQuery = {
-	key: string,
-	query: () => QueryConstraint|QueryConstraint[],
-	relation?: string
-}
-
-type WithQueryConvert = WithQuery & {
-	queryTarget: string
-}
+// type WithQuery = {
+// 	key: string,
+// 	query: () => QueryConstraint|QueryConstraint[],
+// 	relation?: string
+// }
+//
+// type WithQueryConvert = WithQuery & {
+// 	queryTarget: string
+// }
 
 export default class AlcQuery<T extends FModel> {
 	#query: Query
@@ -194,8 +192,6 @@ export default class AlcQuery<T extends FModel> {
 				const res = await relation.get()
 				this.documentLen = this.documentLen+res.length
 				if(res.length) {
-					const s = relatedName.split('.').slice()
-					s.splice(parentIndex+1)
 					if(relation.type == 'hasMany' || relation.type == 'hasManySub') {
 						parent.setValueByKey(key, res)
 					} else {

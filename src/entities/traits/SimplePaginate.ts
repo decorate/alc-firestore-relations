@@ -1,11 +1,11 @@
-import AlcQuery from '@/entities/traits/AlcQuery'
-import FModel from '@/FModel'
+import AlcQuery from '../../entities/traits/AlcQuery'
+import FModel from '../../FModel'
 import {
 	limit,
 	startAfter
 } from '@firebase/firestore'
-import { IPaginate } from '@/interfaces/IPaginate'
-import HasRelationships from '@/entities/traits/HasRelationships'
+import { IPaginate } from '../../interfaces/IPaginate'
+import HasRelationships from '../../entities/traits/HasRelationships'
 
 export default class SimplePaginate<T extends FModel> implements IPaginate<T>{
 	limit: number = 15

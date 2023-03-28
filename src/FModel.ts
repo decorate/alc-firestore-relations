@@ -3,21 +3,17 @@ import { IIndexable } from '@team-decorate/alcts/dist/interfaces/IIndexxable'
 import {
 	Firestore,
 	collection,
-	addDoc,
 	setDoc,
 	doc,
 	DocumentData,
-	DocumentReference,
 	query,
-	getDocs,
-	deleteDoc, Query, FieldPath, WhereFilterOp, where, Timestamp, collectionGroup,
+	Query, Timestamp, collectionGroup,
 } from '@firebase/firestore'
-import { camelCase, camelToSnake, snakeToCamel } from '@/utility/stringUtility'
-import pluralize, { isPlural, isSingular } from 'pluralize'
-import HasRelationships from '@/entities/traits/HasRelationships'
-import AlcQuery from '@/entities/traits/AlcQuery'
-import {setValueByKey, getValueByKey} from '@/utility/objectUtility'
-import SimplePaginate from '@/entities/traits/SimplePaginate'
+import { camelCase } from './utility/stringUtility'
+import pluralize from 'pluralize'
+import HasRelationships from './entities/traits/HasRelationships'
+import AlcQuery from './entities/traits/AlcQuery'
+import {setValueByKey, getValueByKey} from './utility/objectUtility'
 
 export default class FModel extends Model {
 	query: Query
@@ -114,24 +110,6 @@ export default class FModel extends Model {
 		return this
 	}
 
-	async saveSub<T extends FModel>(data: T[]) {
-		const res = await this.save()
-		await Promise.all(data.map(async x => {
-			const tableName = x.tableName || pluralize(x.constructor.name)
-			const colRef = collection(this.db!, res.table, res.id, tableName)
-			const d = doc(colRef)
-			const id = x.id || `${x.idPrefix}${d.id}`
-
-			const _doc = doc(colRef, id)
-			const data = {
-				...x.getPostable(),
-				id: id
-			}
-			await setDoc(_doc, data)
-		}))
-		return this
-	}
-
 	get table(): string {
 		let name = this.tableName
 		if(!name) {
@@ -156,17 +134,6 @@ export default class FModel extends Model {
 		const q = query(collectionGroup(m.db, m.table))
 		return new AlcQuery(this, q, m.primaryKey)
 	}
-
-	static async truncate<T extends FModel>(this: new (data?: IIndexable) => T) {
-		const m = new this()
-		const ref = collection(m.db!, m.table)
-		const q = query(ref)
-		const snap = await getDocs(q)
-		snap.forEach(x => {
-			deleteDoc(x.ref)
-		})
-	}
-
 
 	set sender(v: string[]) {
 		this._sender = v
