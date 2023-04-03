@@ -20,7 +20,7 @@ export class SetUpFirestore {
 			}
 
 			if(config?.authTest) {
-				connectAuthEmulator(window.alcAuth, config?.authUrl || 'localhost:9099', {disableWarnings: config?.disableWarning || false})
+				connectAuthEmulator(window.alcAuth, config?.authUrl || 'http://localhost:9099', {disableWarnings: config?.disableWarning || false})
 			}
 
 			if(config?.test) {
