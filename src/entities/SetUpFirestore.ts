@@ -12,7 +12,7 @@ export class SetUpFirestore {
 		if(window.alcFirebase === undefined) {
 			window.alcFirebase = initializeApp({...config})
 
-			window.alcAuth = getAuth(window.alcFirebase)
+			window.alcAuth = getAuth()
 
 			window.alcDB = getFirestore(window.alcFirebase)
 			if(config.prefix) {
