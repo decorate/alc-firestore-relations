@@ -1,8 +1,9 @@
 import {initializeApp} from 'firebase/app'
 import {
 	getFirestore,
-	connectFirestoreEmulator
+	connectFirestoreEmulator,
 } from 'firebase/firestore'
+import {connectAuthEmulator, getAuth} from 'firebase/auth'
 import {IFirestoreConfig} from '../interfaces/IFirestoreConfig'
 
 export class SetUpFirestore {
@@ -11,9 +12,15 @@ export class SetUpFirestore {
 		if(window.alcFirebase === undefined) {
 			window.alcFirebase = initializeApp({...config})
 
+			window.alcAuth = getAuth(window.alcFirebase)
+
 			window.alcDB = getFirestore(window.alcFirebase)
 			if(config.prefix) {
 				window.alcPrefix = config.prefix
+			}
+
+			if(config?.authTest) {
+				connectAuthEmulator(window.alcAuth, config?.authUrl || 'localhost:9099', {disableWarnings: config?.disableWarning || false})
 			}
 
 			if(config?.test) {

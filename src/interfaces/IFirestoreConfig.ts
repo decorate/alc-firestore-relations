@@ -11,5 +11,8 @@ export interface IFirestoreConfig {
 	prefix?: string,
 	test?: boolean,
 	port?: number,
-	url?: string
+	url?: string,
+	authTest?: boolean,
+	authUrl?: string,
+	disableWarning?: boolean
 }

@@ -5,6 +5,7 @@ declare global {
 	interface Window {
 		alcFirebase: FirebaseApp
 		alcDB: Firestore
-		alcPrefix?: string
+		alcPrefix?: string,
+		alcAuth: any
 	}
 }
