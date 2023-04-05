@@ -4,6 +4,8 @@ import {
 	Firestore,
 	collection,
 	setDoc,
+	getDocs,
+	deleteDoc,
 	doc,
 	DocumentData,
 	query,
@@ -198,6 +200,16 @@ export default class FModel extends Model {
 		if(!this.updatedAt) {
 			this.updatedAt = data[upKey]
 		}
+	}
+
+	static async truncate<T extends FModel>(this: new (data?: IIndexable) => T) {
+		const m = new this()
+		const ref = collection(m.db!, m.table)
+		const q = query(ref)
+		const snap = await getDocs(q)
+		snap.forEach(x => {
+			deleteDoc(x.ref)
+		})
 	}
 
 	setDocument(_doc: DocumentData) {
