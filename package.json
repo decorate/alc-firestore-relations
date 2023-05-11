@@ -1,6 +1,6 @@
 {
   "name": "@team-decorate/alc-firestore-relations",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "main": "dist/index.d.ts",
   "types": "dist/index.d.ts",
   "files": [
