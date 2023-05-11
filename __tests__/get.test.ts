@@ -1,7 +1,7 @@
 import { SetUpFirestore } from '@/entities/SetUpFirestore'
 import config from '@/private/config.json'
 import Restaurant from '@/entities/Restaurant'
-import { collection, collectionGroup, getDocs, limit, orderBy, query, where } from '@firebase/firestore'
+import { collection, collectionGroup, getDocs, limit, orderBy, query, Timestamp, where } from '@firebase/firestore'
 import { initializeApp } from 'firebase/app'
 import { connectFirestoreEmulator, doc, getFirestore, setDoc } from 'firebase/firestore'
 import axios from 'axios'
@@ -682,6 +682,13 @@ describe('firestore test', () => {
 		expect(r!.reviews[0].tests.length).toBe(2)
 		expect(r!.reviews[0].tests.map(x => x.text).join(',')).toBe('B++,A++')
 
+	})
+
+	test.only('Timestamp saved', async () => {
+		await new Restaurant({id: 'A', name: 'test'}).save()
+		const r = await Restaurant.query().find('A')
+		expect(r!.createdAt).toBeInstanceOf(Timestamp)
+		expect(r!.updatedAt).toBeInstanceOf(Timestamp)
 	})
 
 })
