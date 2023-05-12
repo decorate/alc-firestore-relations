@@ -54,6 +54,10 @@ export default class FModel extends Model {
 		this.sender.length ? this.sender.push(...field) : this.fillable.push(...field)
 
 		if(data) {
+			if(data.createdAt && !(data.createdAt instanceof Timestamp)) {
+				data.createdAt = Timestamp.fromDate(new Date(data.createdAt))
+			}
+
 			this.data = data
 		}
 	}

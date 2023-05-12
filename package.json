@@ -11,7 +11,7 @@
     "build": "./node_modules/.bin/tsc",
     "mock:build": "axios-mock-server -b",
     "mock:watch": "axios-mock-server -w",
-    "test": "jest --forceExit -i --textNamePattern='Timestamp.*'"
+    "test": "jest --forceExit"
   },
   "repository": {
     "type": "git",

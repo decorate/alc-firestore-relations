@@ -17,7 +17,7 @@ export class SetUpFirestore {
 
 			window.alcDB = getFirestore(window.alcFirebase)
 
-			window.alcStorage = getStorage()
+			window.alcStorage = getStorage(window.alcFirebase)
 			if(config.prefix) {
 				window.alcPrefix = config.prefix
 			}

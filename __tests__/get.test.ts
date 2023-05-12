@@ -684,11 +684,21 @@ describe('firestore test', () => {
 
 	})
 
-	test.only('Timestamp saved', async () => {
+	test('Timestamp saved', async () => {
 		await new Restaurant({id: 'A', name: 'test'}).save()
 		const r = await Restaurant.query().find('A')
 		expect(r!.createdAt).toBeInstanceOf(Timestamp)
 		expect(r!.updatedAt).toBeInstanceOf(Timestamp)
+	})
+
+	test.only('not timestamp', async () => {
+		await new Restaurant({id: 'A', name: 'test', createdAt: '2023-05-11'}).save()
+		const r = await Restaurant.query().find('A')
+		expect(r?.id).toBe('A')
+		expect(r?.createdAt).toBeInstanceOf(Timestamp)
+		expect(r?.createdAt?.toDate().getFullYear()).toBe(2023)
+		expect((r?.createdAt?.toDate().getMonth())! + 1).toBe(5)
+		expect(r?.createdAt?.toDate().getDate()).toBe(11)
 	})
 
 })
